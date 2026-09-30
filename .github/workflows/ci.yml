@@ -24,7 +24,9 @@ jobs:
           c++ --version
 
       - name: Install CI tools
-        run: sudo apt-get update && sudo apt-get install -y can-utils clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y can-utils clang-format "linux-modules-extra-$(uname -r)"
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
