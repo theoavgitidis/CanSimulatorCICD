@@ -24,11 +24,14 @@ int main() {
         .brake_active = false,
         .engine_rpm = 3000,
         .engine_temp_c = 90.0,
+        .fuel_percent = 75.0,
+        .battery_voltage = 12.6,
     };
 
     const cansim::CanEncoder encoder;
     const cansim::CanFrame motion_frame = encoder.encodeVehicleMotion(state);
     const cansim::CanFrame engine_frame = encoder.encodeEngineStatus(state);
+    const cansim::CanFrame power_frame = encoder.encodePowerStatus(state);
 
     bool passed = true;
     passed &= expectEqual("motion CAN ID", motion_frame.id, 0x100);
@@ -43,6 +46,12 @@ int main() {
     passed &= expectEqual("rpm byte 0", engine_frame.data[0], 0xB8);
     passed &= expectEqual("rpm byte 1", engine_frame.data[1], 0x0B);
     passed &= expectEqual("engine temperature byte", engine_frame.data[2], 0x5A);
+
+    passed &= expectEqual("power CAN ID", power_frame.id, 0x102);
+    passed &= expectEqual("power DLC", power_frame.dlc, 8);
+    passed &= expectEqual("fuel byte", power_frame.data[0], 0x4B);
+    passed &= expectEqual("battery byte 0", power_frame.data[1], 0xEC);
+    passed &= expectEqual("battery byte 1", power_frame.data[2], 0x04);
 
     return passed ? 0 : 1;
 }

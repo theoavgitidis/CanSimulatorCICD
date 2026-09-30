@@ -17,12 +17,15 @@ struct CliOptions {
     bool brake_active{false};
     int engine_rpm{3000};
     double engine_temp_c{90.0};
+    double fuel_percent{75.0};
+    double battery_voltage{12.6};
     int frames{1};
 };
 
 void printUsage() {
     std::cout << "Usage: cansim [--speed KPH] [--throttle PERCENT] "
                  "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
+                 "[--fuel PERCENT] [--battery VOLTS] "
                  "[--frames COUNT]\n";
 }
 
@@ -164,6 +167,38 @@ std::optional<CliOptions> parseArgs(int argc, char* argv[]) {
             continue;
         }
 
+        if (arg == "--fuel") {
+            const char* value{};
+            if (!readNextValue(argc, argv, i, arg, value)) {
+                return std::nullopt;
+            }
+
+            const std::optional<double> parsed = parseDouble(value);
+            if (!parsed.has_value()) {
+                std::cerr << "Invalid fuel level: " << value << '\n';
+                return std::nullopt;
+            }
+
+            options.fuel_percent = *parsed;
+            continue;
+        }
+
+        if (arg == "--battery") {
+            const char* value{};
+            if (!readNextValue(argc, argv, i, arg, value)) {
+                return std::nullopt;
+            }
+
+            const std::optional<double> parsed = parseDouble(value);
+            if (!parsed.has_value()) {
+                std::cerr << "Invalid battery voltage: " << value << '\n';
+                return std::nullopt;
+            }
+
+            options.battery_voltage = *parsed;
+            continue;
+        }
+
         if (arg == "--frames") {
             const char* value{};
             if (!readNextValue(argc, argv, i, arg, value)) {
@@ -216,12 +251,15 @@ int main(int argc, char* argv[]) {
         .brake_active = options->brake_active,
         .engine_rpm = options->engine_rpm,
         .engine_temp_c = options->engine_temp_c,
+        .fuel_percent = options->fuel_percent,
+        .battery_voltage = options->battery_voltage,
     };
 
     const cansim::CanEncoder encoder;
     for (int i = 0; i < options->frames; ++i) {
         printFrame(encoder.encodeVehicleMotion(state));
         printFrame(encoder.encodeEngineStatus(state));
+        printFrame(encoder.encodePowerStatus(state));
     }
 
     return 0;

@@ -97,12 +97,13 @@ Current output:
 ```text
 0x100 [8] 10 27 32 00 00 00 00 00
 0x101 [8] B8 0B 5A 00 00 00 00 00
+0x102 [8] 4B EC 04 00 00 00 00 00
 ```
 
 Run with simple CLI values:
 
 ```bash
-./build/cansim --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --frames 1
+./build/cansim --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --frames 1
 ```
 
 Run tests:
