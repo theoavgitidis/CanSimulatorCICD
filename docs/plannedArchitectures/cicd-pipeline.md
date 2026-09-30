@@ -14,7 +14,7 @@ CI/CD means:
 - Continuous Delivery: automatically package code so it is ready to release.
 - Continuous Deployment: automatically release or deploy code after it passes the required checks.
 
-For this project, CI/CD should make the simulator trustworthy before it is used with virtual CAN, real CAN hardware, microcontrollers, or the GUI.
+For this project, CI/CD should make the simulator trustworthy before it is used with virtual CAN, real CAN hardware, microcontrollers, the CLI control surface, or later button-based controls.
 
 ## Pipeline Goals
 
@@ -97,7 +97,7 @@ Planned tools:
 - `clang-tidy`
 - Compiler warnings treated seriously
 
-This can catch issues such as unsafe conversions, unused values, suspicious copies, and incorrect API usage.
+This can catch issues such as unsafe conversions, unused values, suspicious copies, and incorrect control-flow usage.
 
 ### 7. Sanitizer Builds
 
@@ -136,7 +136,6 @@ Initial artifact:
 
 Later artifacts:
 
-- Web dashboard bundle
 - Docker image
 - Example microcontroller firmware package
 - Release archive with config files and documentation
@@ -196,8 +195,8 @@ After the first C++ skeleton exists, add:
 | Vehicle state model | Unit tests |
 | CAN signal encoder | Byte-level unit tests |
 | SocketCAN adapter | Linux `vcan` integration tests |
-| GUI control API | API integration tests |
-| Web dashboard | Frontend build and UI smoke tests |
+| CLI control surface | CLI smoke tests |
+| Button control surface | Input mapping and behavior tests |
 | Config files | Schema validation |
 | Releases | Packaged binaries and checksums |
 | Docker support | Image build and container smoke test |
@@ -225,7 +224,7 @@ Release packaging should happen when a version tag is pushed, not on every commi
 - Should the project use GitHub Actions, GitLab CI, or another CI provider?
 - Should package publishing include Docker from the first milestone?
 - Should hardware-in-the-loop CAN testing be added later using a self-hosted runner?
-- Should the GUI be tested in the same pipeline or in a separate frontend workflow?
+- Should the later button control surface be tested as part of the main simulator pipeline or with a separate hardware/UI workflow?
 
 ## First Implementation Milestone
 

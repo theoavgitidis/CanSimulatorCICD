@@ -6,7 +6,7 @@ Planned.
 
 ## Context
 
-The project is a C++ vehicle telemetry simulator with a strong CI/CD focus. The simulator emits fake car data and exposes it in ways that are useful for software testing, dashboard development, and microcontroller experiments.
+The project is a C++ vehicle telemetry simulator with a strong CI/CD focus. The simulator emits fake car data and exposes it in ways that are useful for software testing, CLI-driven development, later button-based control, and microcontroller experiments.
 
 The current direction is to continue with CAN as the primary vehicle-facing interface.
 
@@ -128,31 +128,31 @@ messages:
 
 This keeps the simulator, tests, documentation, and microcontroller examples aligned.
 
-### 6. GUI is a control and observability surface
+### 6. CLI is the first control surface
 
-The GUI should not replace CAN. It should control and observe the simulator.
+The first implementation should be controlled through a command-line interface. A later control surface can be button-based, but it does not require a web framework.
 
-Expected GUI responsibilities:
+Expected CLI responsibilities:
 
 - Start and stop simulation
 - Select driving scenario
-- Show live vehicle state
-- Show emitted CAN frames
 - Inject faults
 - Adjust signal values manually
 - Display connection status for `vcan0` or real CAN interfaces
+- Print current vehicle state
+- Print emitted CAN frames when requested
 
-Preferred GUI direction:
+Preferred control direction:
 
 ```text
-C++ Simulator Backend
+CLI Commands
       |
-REST / WebSocket Control Plane
+Simulator Control Interface
       |
-Web Dashboard
+C++ Simulator Runtime
 ```
 
-CAN remains the vehicle-facing output. REST and WebSocket are for humans and test automation.
+CAN remains the vehicle-facing output. CLI commands are for humans, local development, and CI smoke tests. A later button control surface should call the same simulator control interface rather than duplicating simulator logic.
 
 ## Initial CAN Frame Plan
 
@@ -169,7 +169,7 @@ CAN remains the vehicle-facing output. REST and WebSocket are for humans and tes
 - Should the first implementation use a custom signal map only, or should DBC support be included from the beginning?
 - Which hardware target should we document first: ESP32, STM32, or Arduino with MCP2515?
 - Should fault injection emit only diagnostic frames, or should it also alter normal telemetry values?
-- Should the GUI be delivered as part of the C++ app or as a separate frontend served by the backend?
+- Should the later button control surface be a small local desktop UI, physical hardware buttons, or both?
 
 ## Next Planned Step
 
@@ -178,6 +178,7 @@ Create the repository skeleton:
 - CMake-based C++ project
 - Core vehicle state model
 - CAN signal encoder
+- CLI control surface
 - SocketCAN output adapter
 - Unit tests for frame encoding
 - Linux `vcan` integration test

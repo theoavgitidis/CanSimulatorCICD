@@ -9,8 +9,9 @@ Planned.
 ```mermaid
 flowchart LR
     user["Developer / Tester"]
-    web["Web Dashboard"]
-    api["REST / WebSocket Control Plane"]
+    cli["CLI Control"]
+    buttons["Button Control Surface<br/>planned later"]
+    control["Simulator Control Interface"]
 
     subgraph simulator["C++ Simulator Runtime"]
         scenario["Scenario Engine"]
@@ -36,9 +37,11 @@ flowchart LR
         tools["CAN Tools / Integration Tests"]
     end
 
-    user --> web
-    web <--> api
-    api <--> app
+    user --> cli
+    user --> buttons
+    cli --> control
+    buttons --> control
+    control <--> app
 
     app --> scenario
     app --> faults
@@ -144,18 +147,25 @@ classDiagram
         +frames() vector~CanFrame~
     }
 
-    class ControlApi {
+    class SimulatorControl {
         +startSimulation()
         +stopSimulation()
         +setScenario(name)
         +setManualValue(signal, value)
         +injectFault(code)
+        +currentState() VehicleState
     }
 
-    class WebDashboard {
-        +showVehicleState()
-        +showCanFrames()
-        +showConnectionStatus()
+    class CliController {
+        +parseArguments(args)
+        +runCommand()
+        +printState()
+        +printFrames()
+    }
+
+    class ButtonController {
+        +mapButton(input)
+        +handlePress(input)
     }
 
     Simulator o-- VehicleState
@@ -176,8 +186,9 @@ classDiagram
     CanOutput <|.. SocketCanOutput
     CanOutput <|.. RecordingCanOutput
 
-    ControlApi --> Simulator
-    WebDashboard --> ControlApi
+    SimulatorControl --> Simulator
+    CliController --> SimulatorControl
+    ButtonController --> SimulatorControl
 ```
 
 ## CI/CD Implementation Diagram
@@ -194,6 +205,7 @@ flowchart TD
     configure["Configure<br/>cmake -S . -B build"]
     build["Build<br/>cmake --build build --parallel"]
     unit["Run Unit Tests<br/>ctest --test-dir build"]
+    cliSmoke["Run CLI Smoke Tests<br/>start, scenario, frames"]
     format["Formatting Check<br/>clang-format"]
     static["Static Analysis<br/>clang-tidy"]
     sanitizer["Sanitizer Build<br/>ASan / UBSan"]
@@ -219,11 +231,14 @@ flowchart TD
     tools --> configure
     configure --> build
     build --> unit
+    build --> cliSmoke
     build --> format
     build --> static
     unit --> sanitizer
+    cliSmoke --> sanitizer
 
     unit --> linuxOnly
+    cliSmoke --> linuxOnly
     linuxOnly --> vcanSetup
     vcanSetup --> integration
 
@@ -257,4 +272,4 @@ Recommended order:
 4. Add the first CI workflow that builds and runs the test.
 5. Expand CI as the architecture expands.
 
-Do not wait for SocketCAN, the GUI, packaging, or hardware support before adding CI. Those should be added as later CI stages once the matching project capability exists.
+Do not wait for SocketCAN, the button control surface, packaging, or hardware support before adding CI. Those should be added as later CI stages once the matching project capability exists.

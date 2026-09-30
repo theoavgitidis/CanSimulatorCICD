@@ -6,7 +6,7 @@ The simulator will generate fake vehicle telemetry, encode it into CAN frames, a
 
 ## Current Status
 
-This repository is in the planning stage.
+This repository has the first minimal C++ implementation slice.
 
 Implemented so far:
 
@@ -14,14 +14,19 @@ Implemented so far:
 - System diagram
 - Class diagram
 - CI/CD implementation diagram
+- CMake project skeleton
+- `CanFrame` type
+- `VehicleState` type
+- First CAN encoder function for `0x100` `VehicleMotion`
+- CLI executable that prints one encoded CAN frame
+- CTest-registered unit test
 
 Not implemented yet:
 
-- C++ project skeleton
-- Simulator executable
-- CAN encoder
-- CLI
-- Unit tests
+- Full CLI argument parsing
+- Additional CAN messages
+- Scenario engine
+- SocketCAN output
 - GitHub Actions workflow
 
 ## Project Goals
@@ -71,6 +76,33 @@ C++ Simulator Runtime
 | `0x102` | PowerStatus | fuel level, battery voltage | 500 ms |
 | `0x103` | GearStatus | selected gear | 100 ms |
 | `0x700` | Diagnostics | active fault code summary | 1000 ms |
+
+## Current CLI Usage
+
+Build the project:
+
+```bash
+cmake -S . -B build
+cmake --build build
+```
+
+Run the simulator:
+
+```bash
+./build/cansim
+```
+
+Current output:
+
+```text
+0x100 [8] 10 27 32 00 00 00 00 00
+```
+
+Run tests:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
 
 ## Planned CLI Usage
 
@@ -125,13 +157,33 @@ vcan0  101   [8]  B8 0B 5A 00 00 00 00 00
 
 ## Planned Build Flow
 
-These commands will be used after the CMake project skeleton is added.
-
 ```bash
 cmake -S . -B build
 cmake --build build --parallel
 ctest --test-dir build
 ```
+
+## VS Code Setup
+
+Install these extensions:
+
+- C/C++ by Microsoft
+- CMake Tools by Microsoft
+
+If VS Code marks project includes such as `#include "cansim/can_encoder.hpp"` as errors, run:
+
+1. `Cmd + Shift + P`
+2. `CMake: Configure`
+3. `C/C++: Reset IntelliSense Database`
+4. `Developer: Reload Window`
+
+The project exports CMake compile commands and includes `.vscode/settings.json` so the C/C++ extension can use CMake Tools as its configuration provider.
+
+If the errors remain, check the bottom-right status bar in VS Code:
+
+- CMake should show a selected kit.
+- C++ should use the `Mac` configuration.
+- The opened folder should be the repository root, not the `src/` or `include/` folder.
 
 ## CI/CD Direction
 
