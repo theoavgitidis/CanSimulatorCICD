@@ -1,4 +1,5 @@
 #include "cansim/can_encoder.hpp"
+#include "cansim/can_signal_map.hpp"
 #include "cansim/vehicle_state.hpp"
 
 #include <cstdint>
@@ -14,6 +15,24 @@ bool expectEqual(const char* name, std::uint32_t actual, std::uint32_t expected)
 
     std::cerr << name << " expected " << expected << " but got " << actual << '\n';
     return false;
+}
+
+bool expectFrame(const char* name, const cansim::CanFrame& actual,
+                 const cansim::CanFrame& expected) {
+    bool passed = true;
+    passed &= expectEqual(name, actual.id, expected.id);
+    passed &= expectEqual(name, actual.dlc, expected.dlc);
+
+    for (std::size_t i = 0; i < actual.data.size(); ++i) {
+        if (actual.data[i] != expected.data[i]) {
+            std::cerr << name << " byte " << i << " expected "
+                      << static_cast<unsigned int>(expected.data[i]) << " but got "
+                      << static_cast<unsigned int>(actual.data[i]) << '\n';
+            passed = false;
+        }
+    }
+
+    return passed;
 }
 
 } // namespace
@@ -38,6 +57,9 @@ int main() {
     const cansim::CanFrame gear_frame = encoder.encodeGearStatus(state);
     const cansim::CanFrame diagnostics_frame = encoder.encodeDiagnostics(state);
     const std::vector<cansim::CanFrame> all_frames = encoder.encodeAll(state);
+    const cansim::SignalMapCanEncoder signal_map_encoder{
+        cansim::loadCanSignalMap("config/can-signals.yaml")};
+    const std::vector<cansim::CanFrame> signal_map_frames = signal_map_encoder.encodeAll(state);
 
     bool passed = true;
     passed &= expectEqual("motion CAN ID", motion_frame.id, 0x100);
@@ -75,6 +97,11 @@ int main() {
     passed &= expectEqual("encodeAll frame 2 ID", all_frames[2].id, 0x102);
     passed &= expectEqual("encodeAll frame 3 ID", all_frames[3].id, 0x103);
     passed &= expectEqual("encodeAll frame 4 ID", all_frames[4].id, 0x700);
+
+    passed &= expectEqual("signal map frame count", signal_map_frames.size(), all_frames.size());
+    for (std::size_t i = 0; i < all_frames.size() && i < signal_map_frames.size(); ++i) {
+        passed &= expectFrame("signal map compatibility", signal_map_frames[i], all_frames[i]);
+    }
 
     return passed ? 0 : 1;
 }

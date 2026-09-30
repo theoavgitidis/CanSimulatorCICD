@@ -34,6 +34,8 @@ Implemented:
 - Linux SocketCAN output backend
 - Output factory
 - CAN signal map file at `config/can-signals.yaml`
+- YAML-driven signal packing and message periods loaded from `config/can-signals.yaml`
+- Hardcoded encoder retained as a compatibility baseline in tests
 - Timed repeated sending with per-message periods loaded from `config/can-signals.yaml`
 - Fixed-period timing override with `--period-ms`
 - Testable `CanScheduler` module
@@ -43,7 +45,6 @@ Implemented:
 
 Not implemented yet:
 
-- Loading signal packing definitions from `config/can-signals.yaml` into the encoder
 - Fault names such as `engine_overheat`
 - `--print-state`
 - Real hardware USB-CAN validation
@@ -54,9 +55,9 @@ Not implemented yet:
 - `CMakeLists.txt`: build, tests, formatting target
 - `src/main.cpp`: CLI executable entry point
 - `include/cansim/cli_options.hpp` and `src/cli_options.cpp`: CLI parsing
-- `include/cansim/can_encoder.hpp` and `src/can_encoder.cpp`: CAN frame encoding
+- `include/cansim/can_encoder.hpp` and `src/can_encoder.cpp`: hardcoded baseline and YAML-driven CAN frame encoding
 - `include/cansim/can_scheduler.hpp` and `src/can_scheduler.cpp`: per-message timing
-- `include/cansim/can_signal_map.hpp` and `src/can_signal_map.cpp`: schedule loading from `config/can-signals.yaml`
+- `include/cansim/can_signal_map.hpp` and `src/can_signal_map.cpp`: signal packing and schedule loading from `config/can-signals.yaml`
 - `include/cansim/can_output.hpp`: output interface
 - `src/console_can_output.cpp`: terminal output backend
 - `src/socket_can_output_linux.cpp`: Linux SocketCAN backend
@@ -228,15 +229,14 @@ modprobe: FATAL: Module vcan not found
 - macOS cannot run the SocketCAN backend.
 - Each VM needs its own `vcan0` setup.
 - `candump vcan0` waits silently until frames arrive.
-- Duration mode loads `config/can-signals.yaml` relative to the current working directory unless `--signal-map PATH` is provided.
+- The simulator loads `config/can-signals.yaml` relative to the current working directory unless `--signal-map PATH` is provided.
 
 ## Recommended Next Implementation Step
 
-Load the signal packing definitions from `config/can-signals.yaml` into the encoder instead of
-hardcoding byte positions, scales, and limits in `src/can_encoder.cpp`.
+Add `--print-state` so scenario defaults and manual CLI overrides can be inspected before frames
+are encoded or sent.
 
-Keep the current hardcoded encoder behavior as the compatibility baseline while introducing tests
-that prove YAML-driven encoding produces the same frames.
+This should print the resolved `VehicleState` and exit without requiring CAN output setup.
 
 ## Quick Resume Commands
 

@@ -2,7 +2,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace cansim {
@@ -49,6 +54,99 @@ constexpr double kVoltageScale = 0.01;
 [[nodiscard]] std::uint8_t encodeGear(int gear) {
     const int clamped = std::clamp(gear, -1, 8);
     return static_cast<std::uint8_t>(clamped + 1);
+}
+
+[[nodiscard]] double clampPhysicalValue(double value, const CanSignalDefinition& signal) {
+    if (signal.minimum.has_value()) {
+        value = std::max(value, *signal.minimum);
+    }
+
+    if (signal.maximum.has_value()) {
+        value = std::min(value, *signal.maximum);
+    }
+
+    return value;
+}
+
+[[nodiscard]] std::uint64_t rawLimitForLength(int length_bytes) {
+    return length_bytes >= 8 ? std::numeric_limits<std::uint64_t>::max()
+                             : ((std::uint64_t{1} << (length_bytes * 8)) - 1U);
+}
+
+[[nodiscard]] std::uint64_t scaledRawValue(double value, const CanSignalDefinition& signal) {
+    const double clamped = clampPhysicalValue(value, signal);
+    const double raw = std::lround((clamped - signal.offset) / signal.scale);
+
+    if (raw < 0.0 || raw > static_cast<double>(rawLimitForLength(signal.length_bytes))) {
+        throw std::runtime_error("Encoded signal is out of range: " + signal.name);
+    }
+
+    return static_cast<std::uint64_t>(raw);
+}
+
+[[nodiscard]] std::uint64_t rawValueForSignal(const CanSignalDefinition& signal,
+                                              const VehicleState& state) {
+    if (signal.name == "speed_kph") {
+        return scaledRawValue(state.speed_kph, signal);
+    }
+
+    if (signal.name == "throttle_percent") {
+        return scaledRawValue(state.throttle_percent, signal);
+    }
+
+    if (signal.name == "brake_active") {
+        return state.brake_active ? 1U : 0U;
+    }
+
+    if (signal.name == "engine_rpm") {
+        return scaledRawValue(static_cast<double>(state.engine_rpm), signal);
+    }
+
+    if (signal.name == "engine_temp_c") {
+        return scaledRawValue(state.engine_temp_c, signal);
+    }
+
+    if (signal.name == "fuel_percent") {
+        return scaledRawValue(state.fuel_percent, signal);
+    }
+
+    if (signal.name == "battery_voltage") {
+        return scaledRawValue(state.battery_voltage, signal);
+    }
+
+    if (signal.name == "selected_gear") {
+        if (signal.raw_value_expression != "gear + 1") {
+            throw std::runtime_error("Unsupported selected_gear encoding: " +
+                                     signal.raw_value_expression);
+        }
+
+        return encodeGear(state.gear);
+    }
+
+    if (signal.name == "fault_active") {
+        return state.active_dtc == 0 ? 0U : 1U;
+    }
+
+    if (signal.name == "active_dtc") {
+        return scaledRawValue(static_cast<double>(state.active_dtc), signal);
+    }
+
+    throw std::runtime_error("Unsupported CAN signal: " + signal.name);
+}
+
+void writeRawValue(CanFrame& frame, const CanSignalDefinition& signal, std::uint64_t raw_value) {
+    if (raw_value > rawLimitForLength(signal.length_bytes)) {
+        throw std::runtime_error("Raw signal value does not fit in configured byte length: " +
+                                 signal.name);
+    }
+
+    for (int i = 0; i < signal.length_bytes; ++i) {
+        const int target_byte = signal.endian == CanSignalEndian::little
+                                    ? signal.start_byte + i
+                                    : signal.start_byte + signal.length_bytes - 1 - i;
+        frame.data[static_cast<std::size_t>(target_byte)] =
+            static_cast<std::uint8_t>((raw_value >> (i * 8)) & 0xFFU);
+    }
 }
 
 } // namespace
@@ -120,6 +218,28 @@ std::vector<CanFrame> CanEncoder::encodeAll(const VehicleState& state) const {
         encodeVehicleMotion(state), encodeEngineStatus(state), encodePowerStatus(state),
         encodeGearStatus(state),    encodeDiagnostics(state),
     };
+}
+
+SignalMapCanEncoder::SignalMapCanEncoder(CanSignalMap signal_map)
+    : signal_map_{std::move(signal_map)} {}
+
+std::vector<CanFrame> SignalMapCanEncoder::encodeAll(const VehicleState& state) const {
+    std::vector<CanFrame> frames;
+    frames.reserve(signal_map_.messages.size());
+
+    for (const CanMessageDefinition& message : signal_map_.messages) {
+        CanFrame frame{};
+        frame.id = message.can_id;
+        frame.dlc = 8;
+
+        for (const CanSignalDefinition& signal : message.signals) {
+            writeRawValue(frame, signal, rawValueForSignal(signal, state));
+        }
+
+        frames.push_back(frame);
+    }
+
+    return frames;
 }
 
 } // namespace cansim

@@ -53,6 +53,8 @@ Implemented so far:
 - Console and recording CAN output adapters
 - Linux SocketCAN output adapter for `vcan0` and real CAN interfaces
 - Versioned CAN signal map in `config/can-signals.yaml`
+- YAML-driven signal packing and message periods loaded from `config/can-signals.yaml`
+- Hardcoded encoder retained as a compatibility baseline in tests
 - CAN output factory for CLI-selected output creation
 - Timed repeated sending with per-message periods loaded from `config/can-signals.yaml`
 - Fixed-period timing override with `--period-ms`
@@ -61,7 +63,6 @@ Implemented so far:
 
 Not implemented yet:
 
-- CAN signal map YAML loading for encoder signal definitions
 - Time-based scenario updates
 
 ## Project Goals
@@ -166,6 +167,9 @@ Use a different signal map file:
 ```bash
 ./build/cansim --scenario cruise --duration 10 --signal-map config/can-signals.yaml --output console
 ```
+
+The signal map controls both CAN frame packing and timed message periods. Run commands from the
+repository root, or pass `--signal-map PATH` when running from another directory.
 
 On Linux, send frames to SocketCAN:
 

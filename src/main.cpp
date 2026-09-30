@@ -56,13 +56,13 @@ indexFramesById(const std::vector<cansim::CanFrame>& frames) {
     return frames_by_id;
 }
 
-void sendScheduledFrames(const cansim::CliOptions& options,
+void sendScheduledFrames(const cansim::CliOptions& options, const cansim::CanSignalMap& signal_map,
                          const std::vector<cansim::CanFrame>& frames, cansim::CanOutput& output) {
     using Clock = std::chrono::steady_clock;
 
     std::vector<cansim::CanMessageSchedule> schedule =
         options.period_ms.has_value() ? fixedScheduleForFrames(frames, *options.period_ms)
-                                      : cansim::loadCanMessageSchedule(options.signal_map_path);
+                                      : cansim::messageSchedule(signal_map);
 
     cansim::CanScheduler scheduler{schedule};
     const std::unordered_map<std::uint32_t, cansim::CanFrame> frames_by_id =
@@ -124,8 +124,17 @@ int main(int argc, char* argv[]) {
     }
 
     const cansim::VehicleState state = cansim::toVehicleState(parse_result.options);
-    const cansim::CanEncoder encoder;
-    const std::vector<cansim::CanFrame> frames = encoder.encodeAll(state);
+    cansim::CanSignalMap signal_map;
+    std::vector<cansim::CanFrame> frames;
+    try {
+        signal_map = cansim::loadCanSignalMap(parse_result.options.signal_map_path);
+        const cansim::SignalMapCanEncoder encoder{signal_map};
+        frames = encoder.encodeAll(state);
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+
     std::unique_ptr<cansim::CanOutput> output;
     try {
         output = cansim::createCanOutput(parse_result.options, std::cout);
@@ -141,7 +150,7 @@ int main(int argc, char* argv[]) {
 
     try {
         if (parse_result.options.duration_seconds.has_value()) {
-            sendScheduledFrames(parse_result.options, frames, *output);
+            sendScheduledFrames(parse_result.options, signal_map, frames, *output);
             return 0;
         }
 

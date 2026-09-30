@@ -81,6 +81,7 @@ target_link_libraries(cansim_tests
 )
 
 add_test(NAME cansim_tests COMMAND cansim_tests)
+set_tests_properties(cansim_tests PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(cansim_cli_options_tests
     tests/cli_options_test.cpp
@@ -127,8 +128,10 @@ target_link_libraries(cansim_output_factory_tests
 add_test(NAME cansim_output_factory_tests COMMAND cansim_output_factory_tests)
 
 add_test(NAME cansim_cli_smoke COMMAND cansim --scenario cruise --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1 --output console)
+set_tests_properties(cansim_cli_smoke PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_test(NAME cansim_cli_duration_smoke COMMAND cansim --scenario cruise --duration 0.002 --period-ms 1 --output console)
+set_tests_properties(cansim_cli_duration_smoke PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_test(NAME cansim_cli_scheduled_smoke COMMAND cansim --scenario cruise --duration 0.002 --output console)
 set_tests_properties(cansim_cli_scheduled_smoke PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
