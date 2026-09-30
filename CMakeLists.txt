@@ -16,12 +16,15 @@ set(CANSIM_FORMAT_FILES
     include/cansim/console_can_output.hpp
     include/cansim/recording_can_output.hpp
     include/cansim/scenario.hpp
+    include/cansim/socket_can_output.hpp
     include/cansim/vehicle_state.hpp
     src/can_encoder.cpp
+    src/can_output_factory.cpp
     src/cli_options.cpp
     src/console_can_output.cpp
     src/main.cpp
     src/scenario.cpp
+    src/socket_can_output_linux.cpp
     tests/can_encoder_test.cpp
     tests/cli_options_test.cpp
     tests/can_output_factory_test.cpp
@@ -36,6 +39,13 @@ add_library(cansim_core
     src/console_can_output.cpp
     src/scenario.cpp
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_sources(cansim_core
+        PRIVATE
+            src/socket_can_output_linux.cpp
+    )
+endif()
 
 target_include_directories(cansim_core
     PUBLIC

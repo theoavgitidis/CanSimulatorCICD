@@ -17,6 +17,15 @@ bool expectTrue(const char* name, bool value) {
     return false;
 }
 
+bool expectFalse(const char* name, bool value) {
+    if (!value) {
+        return true;
+    }
+
+    std::cerr << name << " expected false but got true\n";
+    return false;
+}
+
 bool expectString(const char* name, const std::string& actual, const std::string& expected) {
     if (actual == expected) {
         return true;
@@ -49,6 +58,15 @@ int main() {
 
     passed &=
         expectString("factory output text", stream.str(), "0x100 [8] 10 27 32 00 00 00 00 00\n");
+
+#if !defined(__linux__)
+    options.output_mode = cansim::OutputMode::socketcan;
+    options.interface_name = "vcan0";
+    std::unique_ptr<cansim::CanOutput> unsupported_output =
+        cansim::createCanOutput(options, stream);
+    passed &= expectFalse("factory rejects socketcan on non-linux",
+                          static_cast<bool>(unsupported_output));
+#endif
 
     return passed ? 0 : 1;
 }

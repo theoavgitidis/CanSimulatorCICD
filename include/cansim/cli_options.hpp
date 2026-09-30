@@ -9,6 +9,7 @@ namespace cansim {
 
 enum class OutputMode {
     console,
+    socketcan,
 };
 
 struct CliOptions {
@@ -23,6 +24,7 @@ struct CliOptions {
     std::uint16_t active_dtc{0};
     int frames{1};
     OutputMode output_mode{OutputMode::console};
+    std::string interface_name{"vcan0"};
 };
 
 enum class CliParseStatus {

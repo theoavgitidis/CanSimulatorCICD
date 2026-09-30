@@ -4,6 +4,34 @@ A planned C++ vehicle telemetry simulator focused on CAN output and CI/CD practi
 
 The simulator will generate fake vehicle telemetry, encode it into CAN frames, and send those frames first to the terminal, then to Linux SocketCAN interfaces such as `vcan0` and later real CAN hardware.
 
+## Target End State
+
+The final real-world system is:
+
+```text
+Car
+  |
+Vehicle CAN bus
+  |
+Microcontroller CAN interface
+  |
+Display
+```
+
+The simulator is a development and CI tool for the same microcontroller/display path:
+
+```text
+C++ CAN Simulator
+  |
+vcan0 or USB-CAN adapter
+  |
+Microcontroller CAN interface
+  |
+Display
+```
+
+In other words, the simulator stands in for the car while the microcontroller firmware and display behavior are being developed and tested.
+
 ## Current Status
 
 This repository has a working first C++ CLI implementation slice.
@@ -23,6 +51,7 @@ Implemented so far:
 - `encodeAll()` frame collection helper
 - Basic `idle`, `cruise`, and `braking` scenarios
 - Console and recording CAN output adapters
+- Linux SocketCAN output adapter for `vcan0` and real CAN interfaces
 - Versioned CAN signal map in `config/can-signals.yaml`
 - CAN output factory for CLI-selected output creation
 - CTest-registered encoder, CLI parser, scenario, output, smoke, and formatting tests
@@ -30,7 +59,6 @@ Implemented so far:
 
 Not implemented yet:
 
-- SocketCAN output
 - CAN signal map YAML loading
 - Time-based scenario updates
 
@@ -119,6 +147,14 @@ Run with a scenario:
 ./build/cansim --scenario cruise --frames 1
 ```
 
+On Linux, send frames to SocketCAN:
+
+```bash
+./build/cansim --scenario cruise --frames 1 --output socketcan --interface vcan0
+```
+
+On macOS, `--output socketcan` is parsed but not supported at runtime because SocketCAN is a Linux kernel API. Use console output locally on your Mac, and use GitHub Actions or a Linux VM for `vcan0` integration testing.
+
 Available scenarios:
 
 - `idle`
@@ -186,7 +222,7 @@ cansim --scenario cruise --fault engine_overheat
 Send CAN frames to a Linux virtual CAN interface:
 
 ```bash
-cansim --scenario cruise --interface vcan0
+cansim --scenario cruise --output socketcan --interface vcan0
 ```
 
 ## Where CAN Output Will Appear
@@ -199,7 +235,7 @@ The first implementation will print CAN frames directly in the terminal:
 0x102 [8] 64 00 7E 04 00 00 00 00
 ```
 
-Later, on Linux, SocketCAN output can be inspected with:
+On Linux, SocketCAN output can be inspected with:
 
 ```bash
 candump vcan0

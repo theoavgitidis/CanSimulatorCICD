@@ -6,9 +6,21 @@ Planned.
 
 ## Context
 
-The project is a C++ vehicle telemetry simulator with a strong CI/CD focus. The simulator emits fake car data and exposes it in ways that are useful for software testing, CLI-driven development, later button-based control, and microcontroller experiments.
+The project is a C++ vehicle telemetry simulator with a strong CI/CD focus. The simulator emits fake car data and exposes it in ways that are useful for software testing, CLI-driven development, later button-based control, and microcontroller display experiments.
 
 The current direction is to continue with CAN as the primary vehicle-facing interface.
+
+The future real-world target path is:
+
+```text
+Car -> Vehicle CAN bus -> Microcontroller CAN interface -> Display
+```
+
+The simulator exists to stand in for the car during development:
+
+```text
+C++ Simulator -> vcan0 or USB-CAN adapter -> Microcontroller CAN interface -> Display
+```
 
 ## Decisions
 
@@ -59,11 +71,11 @@ Example hardware flow:
 C++ Simulator -> can0 -> USB-CAN adapter -> CAN transceiver -> microcontroller
 ```
 
-### 3. Microcontroller reachability
+### 3. Microcontroller and display reachability
 
-A microcontroller can receive simulated data through a real CAN bus.
+A microcontroller can receive simulated data through a real CAN bus and use it to drive a display.
 
-Expected hardware path:
+Expected simulator-to-hardware development path:
 
 ```text
 Computer running simulator
@@ -75,6 +87,20 @@ CANH / CANL
 CAN transceiver
       |
 Microcontroller CAN controller
+      |
+Display
+```
+
+Expected final vehicle path:
+
+```text
+Car CAN bus
+      |
+CAN transceiver
+      |
+Microcontroller CAN controller
+      |
+Display
 ```
 
 Good target boards:
@@ -83,7 +109,7 @@ Good target boards:
 - STM32 board with built-in CAN controller plus transceiver
 - Arduino-style board with an MCP2515 CAN module
 
-The microcontroller does not call the simulator directly. It listens for CAN frames as if they came from a real vehicle bus.
+The microcontroller does not call the simulator directly. It listens for CAN frames as if they came from a real vehicle bus. In the final setup, the real car replaces the simulator as the CAN frame source.
 
 ### 4. Virtual CAN enables CI/CD testing
 

@@ -2,6 +2,7 @@
 #include "cansim/can_output_factory.hpp"
 #include "cansim/cli_options.hpp"
 
+#include <exception>
 #include <iostream>
 #include <memory>
 
@@ -21,10 +22,16 @@ int main(int argc, char* argv[]) {
 
     const cansim::VehicleState state = cansim::toVehicleState(parse_result.options);
     const cansim::CanEncoder encoder;
-    std::unique_ptr<cansim::CanOutput> output =
-        cansim::createCanOutput(parse_result.options, std::cout);
+    std::unique_ptr<cansim::CanOutput> output;
+    try {
+        output = cansim::createCanOutput(parse_result.options, std::cout);
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+
     if (!output) {
-        std::cerr << "Failed to create CAN output\n";
+        std::cerr << "Selected CAN output is not supported on this platform\n";
         return 1;
     }
 

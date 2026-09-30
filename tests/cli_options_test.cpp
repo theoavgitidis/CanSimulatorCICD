@@ -43,6 +43,15 @@ bool expectEqual(const char* name, cansim::OutputMode actual, cansim::OutputMode
     return false;
 }
 
+bool expectString(const char* name, const std::string& actual, const std::string& expected) {
+    if (actual == expected) {
+        return true;
+    }
+
+    std::cerr << name << " expected " << expected << " but got " << actual << '\n';
+    return false;
+}
+
 bool expectDouble(const char* name, double actual, double expected) {
     if (std::fabs(actual - expected) < 0.0001) {
         return true;
@@ -105,6 +114,24 @@ bool testParsesAllOptions() {
     passed &= expectEqual("dtc", result.options.active_dtc, static_cast<std::uint16_t>(0x0420));
     passed &= expectEqual("frames", result.options.frames, 3);
     passed &= expectEqual("output mode", result.options.output_mode, cansim::OutputMode::console);
+    return passed;
+}
+
+bool testParsesSocketCanOutput() {
+    char arg0[] = "cansim";
+    char arg1[] = "--output";
+    char arg2[] = "socketcan";
+    char arg3[] = "--interface";
+    char arg4[] = "vcan0";
+    char* argv[] = {arg0, arg1, arg2, arg3, arg4};
+
+    const cansim::CliParseResult result = cansim::parseCliOptions(5, argv);
+
+    bool passed = true;
+    passed &= expectStatus("socketcan output status", result.status, cansim::CliParseStatus::ok);
+    passed &= expectEqual("socketcan output mode", result.options.output_mode,
+                          cansim::OutputMode::socketcan);
+    passed &= expectString("socketcan interface", result.options.interface_name, "vcan0");
     return passed;
 }
 
@@ -187,7 +214,7 @@ bool testInvalidDtcFails() {
 bool testInvalidOutputModeFails() {
     char arg0[] = "cansim";
     char arg1[] = "--output";
-    char arg2[] = "socketcan";
+    char arg2[] = "file";
     char* argv[] = {arg0, arg1, arg2};
 
     const cansim::CliParseResult result = cansim::parseCliOptions(3, argv);
@@ -235,6 +262,7 @@ bool testStateConversion() {
 int main() {
     bool passed = true;
     passed &= testParsesAllOptions();
+    passed &= testParsesSocketCanOutput();
     passed &= testHelpStatus();
     passed &= testScenarioProvidesBaseState();
     passed &= testManualValuesOverrideScenario();

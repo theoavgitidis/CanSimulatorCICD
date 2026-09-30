@@ -23,8 +23,8 @@ jobs:
           cmake --version
           c++ --version
 
-      - name: Install formatting tools
-        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Install CI tools
+        run: sudo apt-get update && sudo apt-get install -y can-utils clang-format
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
@@ -40,3 +40,23 @@ jobs:
 
       - name: Run CLI smoke test
         run: ./build/cansim --scenario cruise --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1 --output console
+
+      - name: Configure virtual CAN interface
+        run: |
+          sudo modprobe vcan
+          sudo ip link add dev vcan0 type vcan
+          sudo ip link set up vcan0
+
+      - name: Run SocketCAN smoke test
+        run: |
+          timeout 10s candump -n 5 vcan0 > candump.log &
+          CANDUMP_PID=$!
+          sleep 1
+          ./build/cansim --scenario cruise --frames 1 --output socketcan --interface vcan0
+          wait "$CANDUMP_PID"
+          cat candump.log
+          grep -q "vcan0.*100" candump.log
+          grep -q "vcan0.*101" candump.log
+          grep -q "vcan0.*102" candump.log
+          grep -q "vcan0.*103" candump.log
+          grep -q "vcan0.*700" candump.log

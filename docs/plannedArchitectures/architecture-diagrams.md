@@ -63,6 +63,40 @@ flowchart LR
     recording --> tools
 ```
 
+## Target Hardware Diagram
+
+```mermaid
+flowchart LR
+    car["Car"]
+    vehicleCan["Vehicle CAN Bus"]
+    transceiver["CAN Transceiver"]
+    microcontroller["Microcontroller<br/>CAN Controller"]
+    display["Display"]
+
+    car --> vehicleCan
+    vehicleCan --> transceiver
+    transceiver --> microcontroller
+    microcontroller --> display
+```
+
+## Simulator Development Path
+
+```mermaid
+flowchart LR
+    simulator["C++ CAN Simulator"]
+    socketcan["SocketCAN Output"]
+    adapter["vcan0 or USB-CAN Adapter"]
+    transceiver["CAN Transceiver<br/>for hardware path"]
+    microcontroller["Microcontroller<br/>CAN Controller"]
+    display["Display"]
+
+    simulator --> socketcan
+    socketcan --> adapter
+    adapter --> transceiver
+    transceiver --> microcontroller
+    microcontroller --> display
+```
+
 ## Class Diagram
 
 ```mermaid

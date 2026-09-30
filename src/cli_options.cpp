@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace cansim {
 namespace {
@@ -24,6 +25,7 @@ struct CliOverrides {
     std::optional<std::uint16_t> active_dtc{};
     std::optional<int> frames{};
     std::optional<OutputMode> output_mode{};
+    std::optional<std::string> interface_name{};
 };
 
 [[nodiscard]] CliParseResult parseError(std::string message) {
@@ -106,6 +108,10 @@ struct CliOverrides {
         return OutputMode::console;
     }
 
+    if (value == "socketcan") {
+        return OutputMode::socketcan;
+    }
+
     return std::nullopt;
 }
 
@@ -177,6 +183,10 @@ void applyOverrides(CliOptions& options, const CliOverrides& overrides) {
     if (overrides.output_mode.has_value()) {
         options.output_mode = *overrides.output_mode;
     }
+
+    if (overrides.interface_name.has_value()) {
+        options.interface_name = *overrides.interface_name;
+    }
 }
 
 } // namespace
@@ -186,7 +196,8 @@ std::string cliUsage() {
            "[--speed KPH] [--throttle PERCENT] "
            "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
            "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
-           "[--dtc CODE] [--frames COUNT] [--output console]\n";
+           "[--dtc CODE] [--frames COUNT] [--output console|socketcan] "
+           "[--interface IFACE]\n";
 }
 
 CliParseResult parseCliOptions(int argc, char* argv[]) {
@@ -390,6 +401,21 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
             }
 
             overrides.output_mode = *parsed;
+            continue;
+        }
+
+        if (arg == "--interface") {
+            std::string error;
+            const std::optional<const char*> value = readNextValue(argc, argv, i, arg, error);
+            if (!value.has_value()) {
+                return parseError(error);
+            }
+
+            if (std::string_view{*value}.empty()) {
+                return parseError("Invalid interface: empty name");
+            }
+
+            overrides.interface_name = std::string{*value};
             continue;
         }
 
