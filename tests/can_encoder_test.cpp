@@ -22,18 +22,27 @@ int main() {
         .speed_kph = 100.0,
         .throttle_percent = 50.0,
         .brake_active = false,
+        .engine_rpm = 3000,
+        .engine_temp_c = 90.0,
     };
 
     const cansim::CanEncoder encoder;
-    const cansim::CanFrame frame = encoder.encodeVehicleMotion(state);
+    const cansim::CanFrame motion_frame = encoder.encodeVehicleMotion(state);
+    const cansim::CanFrame engine_frame = encoder.encodeEngineStatus(state);
 
     bool passed = true;
-    passed &= expectEqual("CAN ID", frame.id, 0x100);
-    passed &= expectEqual("DLC", frame.dlc, 8);
-    passed &= expectEqual("speed byte 0", frame.data[0], 0x10);
-    passed &= expectEqual("speed byte 1", frame.data[1], 0x27);
-    passed &= expectEqual("throttle byte", frame.data[2], 0x32);
-    passed &= expectEqual("brake byte", frame.data[3], 0x00);
+    passed &= expectEqual("motion CAN ID", motion_frame.id, 0x100);
+    passed &= expectEqual("motion DLC", motion_frame.dlc, 8);
+    passed &= expectEqual("speed byte 0", motion_frame.data[0], 0x10);
+    passed &= expectEqual("speed byte 1", motion_frame.data[1], 0x27);
+    passed &= expectEqual("throttle byte", motion_frame.data[2], 0x32);
+    passed &= expectEqual("brake byte", motion_frame.data[3], 0x00);
+
+    passed &= expectEqual("engine CAN ID", engine_frame.id, 0x101);
+    passed &= expectEqual("engine DLC", engine_frame.dlc, 8);
+    passed &= expectEqual("rpm byte 0", engine_frame.data[0], 0xB8);
+    passed &= expectEqual("rpm byte 1", engine_frame.data[1], 0x0B);
+    passed &= expectEqual("engine temperature byte", engine_frame.data[2], 0x5A);
 
     return passed ? 0 : 1;
 }

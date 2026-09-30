@@ -15,12 +15,15 @@ struct CliOptions {
     double speed_kph{100.0};
     double throttle_percent{50.0};
     bool brake_active{false};
+    int engine_rpm{3000};
+    double engine_temp_c{90.0};
     int frames{1};
 };
 
 void printUsage() {
     std::cout << "Usage: cansim [--speed KPH] [--throttle PERCENT] "
-                 "[--brake true|false] [--frames COUNT]\n";
+                 "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
+                 "[--frames COUNT]\n";
 }
 
 std::optional<double> parseDouble(const char* value) {
@@ -129,6 +132,38 @@ std::optional<CliOptions> parseArgs(int argc, char* argv[]) {
             continue;
         }
 
+        if (arg == "--rpm") {
+            const char* value{};
+            if (!readNextValue(argc, argv, i, arg, value)) {
+                return std::nullopt;
+            }
+
+            const std::optional<int> parsed = parsePositiveInt(value);
+            if (!parsed.has_value()) {
+                std::cerr << "Invalid RPM: " << value << '\n';
+                return std::nullopt;
+            }
+
+            options.engine_rpm = *parsed;
+            continue;
+        }
+
+        if (arg == "--engine-temp") {
+            const char* value{};
+            if (!readNextValue(argc, argv, i, arg, value)) {
+                return std::nullopt;
+            }
+
+            const std::optional<double> parsed = parseDouble(value);
+            if (!parsed.has_value()) {
+                std::cerr << "Invalid engine temperature: " << value << '\n';
+                return std::nullopt;
+            }
+
+            options.engine_temp_c = *parsed;
+            continue;
+        }
+
         if (arg == "--frames") {
             const char* value{};
             if (!readNextValue(argc, argv, i, arg, value)) {
@@ -179,11 +214,14 @@ int main(int argc, char* argv[]) {
         .speed_kph = options->speed_kph,
         .throttle_percent = options->throttle_percent,
         .brake_active = options->brake_active,
+        .engine_rpm = options->engine_rpm,
+        .engine_temp_c = options->engine_temp_c,
     };
 
     const cansim::CanEncoder encoder;
     for (int i = 0; i < options->frames; ++i) {
         printFrame(encoder.encodeVehicleMotion(state));
+        printFrame(encoder.encodeEngineStatus(state));
     }
 
     return 0;
