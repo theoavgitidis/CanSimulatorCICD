@@ -104,6 +104,53 @@ bool testHelpStatus() {
     return expectStatus("help status", result.status, cansim::CliParseStatus::help);
 }
 
+bool testScenarioProvidesBaseState() {
+    char arg0[] = "cansim";
+    char arg1[] = "--scenario";
+    char arg2[] = "cruise";
+    char* argv[] = {arg0, arg1, arg2};
+
+    const cansim::CliParseResult result = cansim::parseCliOptions(3, argv);
+
+    bool passed = true;
+    passed &= expectStatus("scenario status", result.status, cansim::CliParseStatus::ok);
+    passed &= expectDouble("scenario speed", result.options.speed_kph, 100.0);
+    passed &= expectDouble("scenario throttle", result.options.throttle_percent, 35.0);
+    passed &= expectEqual("scenario rpm", result.options.engine_rpm, 2500);
+    passed &= expectEqual("scenario gear", result.options.gear, 5);
+    return passed;
+}
+
+bool testManualValuesOverrideScenario() {
+    char arg0[] = "cansim";
+    char arg1[] = "--speed";
+    char arg2[] = "80";
+    char arg3[] = "--scenario";
+    char arg4[] = "cruise";
+    char arg5[] = "--gear";
+    char arg6[] = "4";
+    char* argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, arg6};
+
+    const cansim::CliParseResult result = cansim::parseCliOptions(7, argv);
+
+    bool passed = true;
+    passed &= expectStatus("scenario override status", result.status, cansim::CliParseStatus::ok);
+    passed &= expectDouble("override speed", result.options.speed_kph, 80.0);
+    passed &= expectEqual("override gear", result.options.gear, 4);
+    passed &= expectEqual("scenario rpm still applies", result.options.engine_rpm, 2500);
+    return passed;
+}
+
+bool testInvalidScenarioFails() {
+    char arg0[] = "cansim";
+    char arg1[] = "--scenario";
+    char arg2[] = "launch";
+    char* argv[] = {arg0, arg1, arg2};
+
+    const cansim::CliParseResult result = cansim::parseCliOptions(3, argv);
+    return expectStatus("invalid scenario status", result.status, cansim::CliParseStatus::error);
+}
+
 bool testInvalidGearFails() {
     char arg0[] = "cansim";
     char arg1[] = "--gear";
@@ -166,6 +213,9 @@ int main() {
     bool passed = true;
     passed &= testParsesAllOptions();
     passed &= testHelpStatus();
+    passed &= testScenarioProvidesBaseState();
+    passed &= testManualValuesOverrideScenario();
+    passed &= testInvalidScenarioFails();
     passed &= testInvalidGearFails();
     passed &= testInvalidDtcFails();
     passed &= testMissingValueFails();

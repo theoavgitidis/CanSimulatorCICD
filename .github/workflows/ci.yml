@@ -33,4 +33,4 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
       - name: Run CLI smoke test
-        run: ./build/cansim --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1
+        run: ./build/cansim --scenario cruise --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1

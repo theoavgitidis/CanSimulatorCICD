@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <vector>
 
 namespace cansim {
 namespace {
@@ -112,6 +113,16 @@ CanFrame CanEncoder::encodeDiagnostics(const VehicleState& state) const {
     frame.data[2] = static_cast<std::uint8_t>((state.active_dtc >> 8) & 0xFF);
 
     return frame;
+}
+
+std::vector<CanFrame> CanEncoder::encodeAll(const VehicleState& state) const {
+    return {
+        encodeVehicleMotion(state),
+        encodeEngineStatus(state),
+        encodePowerStatus(state),
+        encodeGearStatus(state),
+        encodeDiagnostics(state),
+    };
 }
 
 }  // namespace cansim

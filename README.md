@@ -20,15 +20,16 @@ Implemented so far:
 - CAN encoders for `0x100`, `0x101`, `0x102`, `0x103`, and `0x700`
 - CLI executable with arguments for speed, throttle, brake, RPM, temperature, fuel, battery, gear, diagnostics, and frame count
 - CLI parsing module
-- CTest-registered encoder, CLI parser, and smoke tests
+- `encodeAll()` frame collection helper
+- Basic `idle`, `cruise`, and `braking` scenarios
+- CTest-registered encoder, CLI parser, scenario, and smoke tests
 - GitHub Actions workflow
 
 Not implemented yet:
 
-- Scenario engine
 - SocketCAN output
 - Signal map YAML loading
-- `encodeAll()` frame collection helper
+- Time-based scenario updates
 
 ## Project Goals
 
@@ -107,6 +108,24 @@ Run with simple CLI values:
 
 ```bash
 ./build/cansim --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1
+```
+
+Run with a scenario:
+
+```bash
+./build/cansim --scenario cruise --frames 1
+```
+
+Available scenarios:
+
+- `idle`
+- `cruise`
+- `braking`
+
+Manual values override scenario values:
+
+```bash
+./build/cansim --scenario cruise --speed 80 --gear 4 --frames 1
 ```
 
 The diagnostics frame uses `00` when no fault is active. With `--dtc 0x0420`, it starts with:

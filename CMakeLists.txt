@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(cansim_core
     src/can_encoder.cpp
     src/cli_options.cpp
+    src/scenario.cpp
 )
 
 target_include_directories(cansim_core
@@ -49,7 +50,18 @@ target_link_libraries(cansim_cli_options_tests
 )
 
 add_test(NAME cansim_cli_options_tests COMMAND cansim_cli_options_tests)
-add_test(NAME cansim_cli_smoke COMMAND cansim --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1)
+
+add_executable(cansim_scenario_tests
+    tests/scenario_test.cpp
+)
+
+target_link_libraries(cansim_scenario_tests
+    PRIVATE
+        cansim_core
+)
+
+add_test(NAME cansim_scenario_tests COMMAND cansim_scenario_tests)
+add_test(NAME cansim_cli_smoke COMMAND cansim --scenario cruise --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1)
 
 function(cansim_enable_warnings target_name)
     if(MSVC)
@@ -63,3 +75,4 @@ cansim_enable_warnings(cansim_core)
 cansim_enable_warnings(cansim)
 cansim_enable_warnings(cansim_tests)
 cansim_enable_warnings(cansim_cli_options_tests)
+cansim_enable_warnings(cansim_scenario_tests)

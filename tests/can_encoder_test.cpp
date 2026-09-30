@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 namespace {
 
@@ -36,6 +37,7 @@ int main() {
     const cansim::CanFrame power_frame = encoder.encodePowerStatus(state);
     const cansim::CanFrame gear_frame = encoder.encodeGearStatus(state);
     const cansim::CanFrame diagnostics_frame = encoder.encodeDiagnostics(state);
+    const std::vector<cansim::CanFrame> all_frames = encoder.encodeAll(state);
 
     bool passed = true;
     passed &= expectEqual("motion CAN ID", motion_frame.id, 0x100);
@@ -66,6 +68,13 @@ int main() {
     passed &= expectEqual("diagnostics active byte", diagnostics_frame.data[0], 0x01);
     passed &= expectEqual("diagnostics code byte 0", diagnostics_frame.data[1], 0x20);
     passed &= expectEqual("diagnostics code byte 1", diagnostics_frame.data[2], 0x04);
+
+    passed &= expectEqual("encodeAll frame count", all_frames.size(), 5);
+    passed &= expectEqual("encodeAll frame 0 ID", all_frames[0].id, 0x100);
+    passed &= expectEqual("encodeAll frame 1 ID", all_frames[1].id, 0x101);
+    passed &= expectEqual("encodeAll frame 2 ID", all_frames[2].id, 0x102);
+    passed &= expectEqual("encodeAll frame 3 ID", all_frames[3].id, 0x103);
+    passed &= expectEqual("encodeAll frame 4 ID", all_frames[4].id, 0x700);
 
     return passed ? 0 : 1;
 }

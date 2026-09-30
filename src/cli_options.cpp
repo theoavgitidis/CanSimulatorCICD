@@ -1,5 +1,7 @@
 #include "cansim/cli_options.hpp"
 
+#include "cansim/scenario.hpp"
+
 #include <cerrno>
 #include <cstdlib>
 #include <limits>
@@ -9,6 +11,19 @@
 
 namespace cansim {
 namespace {
+
+struct CliOverrides {
+    std::optional<double> speed_kph{};
+    std::optional<double> throttle_percent{};
+    std::optional<bool> brake_active{};
+    std::optional<int> engine_rpm{};
+    std::optional<double> engine_temp_c{};
+    std::optional<double> fuel_percent{};
+    std::optional<double> battery_voltage{};
+    std::optional<int> gear{};
+    std::optional<std::uint16_t> active_dtc{};
+    std::optional<int> frames{};
+};
 
 [[nodiscard]] CliParseResult parseError(std::string message) {
     CliParseResult result;
@@ -99,10 +114,66 @@ namespace {
     return argv[index];
 }
 
+void applyScenario(CliOptions& options, Scenario scenario) {
+    const VehicleState state = vehicleStateForScenario(scenario);
+    options.speed_kph = state.speed_kph;
+    options.throttle_percent = state.throttle_percent;
+    options.brake_active = state.brake_active;
+    options.engine_rpm = state.engine_rpm;
+    options.engine_temp_c = state.engine_temp_c;
+    options.fuel_percent = state.fuel_percent;
+    options.battery_voltage = state.battery_voltage;
+    options.gear = state.gear;
+    options.active_dtc = state.active_dtc;
+}
+
+void applyOverrides(CliOptions& options, const CliOverrides& overrides) {
+    if (overrides.speed_kph.has_value()) {
+        options.speed_kph = *overrides.speed_kph;
+    }
+
+    if (overrides.throttle_percent.has_value()) {
+        options.throttle_percent = *overrides.throttle_percent;
+    }
+
+    if (overrides.brake_active.has_value()) {
+        options.brake_active = *overrides.brake_active;
+    }
+
+    if (overrides.engine_rpm.has_value()) {
+        options.engine_rpm = *overrides.engine_rpm;
+    }
+
+    if (overrides.engine_temp_c.has_value()) {
+        options.engine_temp_c = *overrides.engine_temp_c;
+    }
+
+    if (overrides.fuel_percent.has_value()) {
+        options.fuel_percent = *overrides.fuel_percent;
+    }
+
+    if (overrides.battery_voltage.has_value()) {
+        options.battery_voltage = *overrides.battery_voltage;
+    }
+
+    if (overrides.gear.has_value()) {
+        options.gear = *overrides.gear;
+    }
+
+    if (overrides.active_dtc.has_value()) {
+        options.active_dtc = *overrides.active_dtc;
+    }
+
+    if (overrides.frames.has_value()) {
+        options.frames = *overrides.frames;
+    }
+}
+
 }  // namespace
 
 std::string cliUsage() {
-    return "Usage: cansim [--speed KPH] [--throttle PERCENT] "
+    return "Usage: cansim [--scenario idle|cruise|braking] "
+           "[--speed KPH] [--throttle PERCENT] "
            "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
            "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
            "[--dtc CODE] [--frames COUNT]\n";
@@ -110,12 +181,30 @@ std::string cliUsage() {
 
 CliParseResult parseCliOptions(int argc, char* argv[]) {
     CliOptions options;
+    CliOverrides overrides;
+    std::optional<Scenario> scenario;
 
     for (int i = 1; i < argc; ++i) {
         const std::string_view arg{argv[i]};
 
         if (arg == "--help" || arg == "-h") {
             return parseHelp();
+        }
+
+        if (arg == "--scenario") {
+            std::string error;
+            const std::optional<const char*> value = readNextValue(argc, argv, i, arg, error);
+            if (!value.has_value()) {
+                return parseError(error);
+            }
+
+            const std::optional<Scenario> parsed = parseScenario(*value);
+            if (!parsed.has_value()) {
+                return parseError("Invalid scenario: " + std::string(*value));
+            }
+
+            scenario = *parsed;
+            continue;
         }
 
         if (arg == "--speed") {
@@ -130,7 +219,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid speed: " + std::string(*value));
             }
 
-            options.speed_kph = *parsed;
+            overrides.speed_kph = *parsed;
             continue;
         }
 
@@ -146,7 +235,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid throttle: " + std::string(*value));
             }
 
-            options.throttle_percent = *parsed;
+            overrides.throttle_percent = *parsed;
             continue;
         }
 
@@ -162,7 +251,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid brake value: " + std::string(*value));
             }
 
-            options.brake_active = *parsed;
+            overrides.brake_active = *parsed;
             continue;
         }
 
@@ -178,7 +267,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid RPM: " + std::string(*value));
             }
 
-            options.engine_rpm = *parsed;
+            overrides.engine_rpm = *parsed;
             continue;
         }
 
@@ -194,7 +283,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid engine temperature: " + std::string(*value));
             }
 
-            options.engine_temp_c = *parsed;
+            overrides.engine_temp_c = *parsed;
             continue;
         }
 
@@ -210,7 +299,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid fuel level: " + std::string(*value));
             }
 
-            options.fuel_percent = *parsed;
+            overrides.fuel_percent = *parsed;
             continue;
         }
 
@@ -226,7 +315,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid battery voltage: " + std::string(*value));
             }
 
-            options.battery_voltage = *parsed;
+            overrides.battery_voltage = *parsed;
             continue;
         }
 
@@ -242,7 +331,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid gear: " + std::string(*value));
             }
 
-            options.gear = *parsed;
+            overrides.gear = *parsed;
             continue;
         }
 
@@ -258,7 +347,7 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid diagnostic trouble code: " + std::string(*value));
             }
 
-            options.active_dtc = *parsed;
+            overrides.active_dtc = *parsed;
             continue;
         }
 
@@ -274,12 +363,17 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
                 return parseError("Invalid frame count: " + std::string(*value));
             }
 
-            options.frames = *parsed;
+            overrides.frames = *parsed;
             continue;
         }
 
         return parseError("Unknown option: " + std::string(arg));
     }
+
+    if (scenario.has_value()) {
+        applyScenario(options, *scenario);
+    }
+    applyOverrides(options, overrides);
 
     CliParseResult result;
     result.status = CliParseStatus::ok;

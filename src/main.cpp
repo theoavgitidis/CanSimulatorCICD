@@ -39,11 +39,9 @@ int main(int argc, char* argv[]) {
     const cansim::CanEncoder encoder;
 
     for (int i = 0; i < parse_result.options.frames; ++i) {
-        printFrame(encoder.encodeVehicleMotion(state));
-        printFrame(encoder.encodeEngineStatus(state));
-        printFrame(encoder.encodePowerStatus(state));
-        printFrame(encoder.encodeGearStatus(state));
-        printFrame(encoder.encodeDiagnostics(state));
+        for (const cansim::CanFrame& frame : encoder.encodeAll(state)) {
+            printFrame(frame);
+        }
     }
 
     return 0;

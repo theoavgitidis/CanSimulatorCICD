@@ -3,6 +3,8 @@
 #include "cansim/can_frame.hpp"
 #include "cansim/vehicle_state.hpp"
 
+#include <vector>
+
 namespace cansim {
 
 class CanEncoder {
@@ -12,6 +14,7 @@ public:
     [[nodiscard]] CanFrame encodePowerStatus(const VehicleState& state) const;
     [[nodiscard]] CanFrame encodeGearStatus(const VehicleState& state) const;
     [[nodiscard]] CanFrame encodeDiagnostics(const VehicleState& state) const;
+    [[nodiscard]] std::vector<CanFrame> encodeAll(const VehicleState& state) const;
 };
 
 }  // namespace cansim
