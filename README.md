@@ -24,6 +24,7 @@ Implemented so far:
 - Basic `idle`, `cruise`, and `braking` scenarios
 - Console and recording CAN output adapters
 - Versioned CAN signal map in `config/can-signals.yaml`
+- CAN output factory for CLI-selected output creation
 - CTest-registered encoder, CLI parser, scenario, output, smoke, and formatting tests
 - GitHub Actions workflow
 
