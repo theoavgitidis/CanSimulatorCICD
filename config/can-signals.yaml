@@ -1,0 +1,104 @@
+messages:
+  - name: VehicleMotion
+    id: 0x100
+    cycle_ms: 100
+    signals:
+      - name: speed_kph
+        start_byte: 0
+        length_bytes: 2
+        endian: little
+        scale: 0.01
+        offset: 0
+        minimum: 0
+        maximum: 655.35
+        unit: kph
+      - name: throttle_percent
+        start_byte: 2
+        length_bytes: 1
+        scale: 1
+        offset: 0
+        minimum: 0
+        maximum: 100
+        unit: percent
+      - name: brake_active
+        start_byte: 3
+        length_bytes: 1
+        values:
+          0: false
+          1: true
+
+  - name: EngineStatus
+    id: 0x101
+    cycle_ms: 100
+    signals:
+      - name: engine_rpm
+        start_byte: 0
+        length_bytes: 2
+        endian: little
+        scale: 1
+        offset: 0
+        minimum: 0
+        maximum: 16000
+        unit: rpm
+      - name: engine_temp_c
+        start_byte: 2
+        length_bytes: 1
+        scale: 1
+        offset: 0
+        minimum: 0
+        maximum: 255
+        unit: celsius
+
+  - name: PowerStatus
+    id: 0x102
+    cycle_ms: 500
+    signals:
+      - name: fuel_percent
+        start_byte: 0
+        length_bytes: 1
+        scale: 1
+        offset: 0
+        minimum: 0
+        maximum: 100
+        unit: percent
+      - name: battery_voltage
+        start_byte: 1
+        length_bytes: 2
+        endian: little
+        scale: 0.01
+        offset: 0
+        minimum: 0
+        maximum: 655.35
+        unit: volts
+
+  - name: GearStatus
+    id: 0x103
+    cycle_ms: 100
+    signals:
+      - name: selected_gear
+        start_byte: 0
+        length_bytes: 1
+        encoding:
+          raw_value: gear + 1
+          raw_0: reverse
+          raw_1: neutral
+          raw_2_to_9: forward_gears_1_to_8
+
+  - name: Diagnostics
+    id: 0x700
+    cycle_ms: 1000
+    signals:
+      - name: fault_active
+        start_byte: 0
+        length_bytes: 1
+        values:
+          0: false
+          1: true
+      - name: active_dtc
+        start_byte: 1
+        length_bytes: 2
+        endian: little
+        scale: 1
+        offset: 0
+        minimum: 0
+        maximum: 65535

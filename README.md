@@ -22,13 +22,15 @@ Implemented so far:
 - CLI parsing module
 - `encodeAll()` frame collection helper
 - Basic `idle`, `cruise`, and `braking` scenarios
-- CTest-registered encoder, CLI parser, scenario, and smoke tests
+- Console and recording CAN output adapters
+- Versioned CAN signal map in `config/can-signals.yaml`
+- CTest-registered encoder, CLI parser, scenario, output, smoke, and formatting tests
 - GitHub Actions workflow
 
 Not implemented yet:
 
 - SocketCAN output
-- Signal map YAML loading
+- CAN signal map YAML loading
 - Time-based scenario updates
 
 ## Project Goals
