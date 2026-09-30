@@ -43,17 +43,23 @@ jobs:
 
       - name: Configure virtual CAN interface
         run: |
+          sudo modprobe can
+          sudo modprobe can_raw
           sudo modprobe vcan
           sudo ip link add dev vcan0 type vcan
           sudo ip link set up vcan0
+          ip -details link show vcan0
 
       - name: Run SocketCAN smoke test
         run: |
-          timeout 10s candump -n 5 vcan0 > candump.log &
+          sudo timeout 10s candump -n 5 vcan0 > candump.log &
           CANDUMP_PID=$!
           sleep 1
-          ./build/cansim --scenario cruise --frames 1 --output socketcan --interface vcan0
-          wait "$CANDUMP_PID"
+          sudo ./build/cansim --scenario cruise --frames 2 --output socketcan --interface vcan0
+          wait "$CANDUMP_PID" || {
+            cat candump.log || true
+            exit 1
+          }
           cat candump.log
           grep -q "vcan0.*100" candump.log
           grep -q "vcan0.*101" candump.log
