@@ -98,6 +98,12 @@ Current output:
 0x100 [8] 10 27 32 00 00 00 00 00
 ```
 
+Run with simple CLI values:
+
+```bash
+./build/cansim --speed 100 --throttle 50 --brake false --frames 1
+```
+
 Run tests:
 
 ```bash

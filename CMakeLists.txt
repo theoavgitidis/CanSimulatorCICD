@@ -37,6 +37,7 @@ target_link_libraries(cansim_tests
 )
 
 add_test(NAME cansim_tests COMMAND cansim_tests)
+add_test(NAME cansim_cli_smoke COMMAND cansim --speed 100 --throttle 50 --frames 1)
 
 function(cansim_enable_warnings target_name)
     if(MSVC)
