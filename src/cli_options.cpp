@@ -3,6 +3,7 @@
 #include "cansim/scenario.hpp"
 
 #include <cerrno>
+#include <cmath>
 #include <cstdlib>
 #include <limits>
 #include <optional>
@@ -24,6 +25,8 @@ struct CliOverrides {
     std::optional<int> gear{};
     std::optional<std::uint16_t> active_dtc{};
     std::optional<int> frames{};
+    std::optional<double> duration_seconds{};
+    std::optional<int> period_ms{};
     std::optional<OutputMode> output_mode{};
     std::optional<std::string> interface_name{};
 };
@@ -47,6 +50,15 @@ struct CliOverrides {
     const double parsed = std::strtod(value, &end);
 
     if (end == value || *end != '\0' || errno == ERANGE) {
+        return std::nullopt;
+    }
+
+    return parsed;
+}
+
+[[nodiscard]] std::optional<double> parsePositiveDouble(const char* value) {
+    const std::optional<double> parsed = parseDouble(value);
+    if (!parsed.has_value() || *parsed <= 0.0 || !std::isfinite(*parsed)) {
         return std::nullopt;
     }
 
@@ -180,6 +192,14 @@ void applyOverrides(CliOptions& options, const CliOverrides& overrides) {
         options.frames = *overrides.frames;
     }
 
+    if (overrides.duration_seconds.has_value()) {
+        options.duration_seconds = *overrides.duration_seconds;
+    }
+
+    if (overrides.period_ms.has_value()) {
+        options.period_ms = *overrides.period_ms;
+    }
+
     if (overrides.output_mode.has_value()) {
         options.output_mode = *overrides.output_mode;
     }
@@ -196,8 +216,8 @@ std::string cliUsage() {
            "[--speed KPH] [--throttle PERCENT] "
            "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
            "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
-           "[--dtc CODE] [--frames COUNT] [--output console|socketcan] "
-           "[--interface IFACE]\n";
+           "[--dtc CODE] [--frames COUNT] [--duration SECONDS] "
+           "[--period-ms MS] [--output console|socketcan] [--interface IFACE]\n";
 }
 
 CliParseResult parseCliOptions(int argc, char* argv[]) {
@@ -385,6 +405,38 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
             }
 
             overrides.frames = *parsed;
+            continue;
+        }
+
+        if (arg == "--duration") {
+            std::string error;
+            const std::optional<const char*> value = readNextValue(argc, argv, i, arg, error);
+            if (!value.has_value()) {
+                return parseError(error);
+            }
+
+            const std::optional<double> parsed = parsePositiveDouble(*value);
+            if (!parsed.has_value()) {
+                return parseError("Invalid duration: " + std::string(*value));
+            }
+
+            overrides.duration_seconds = *parsed;
+            continue;
+        }
+
+        if (arg == "--period-ms") {
+            std::string error;
+            const std::optional<const char*> value = readNextValue(argc, argv, i, arg, error);
+            if (!value.has_value()) {
+                return parseError(error);
+            }
+
+            const std::optional<int> parsed = parsePositiveInt(*value);
+            if (!parsed.has_value()) {
+                return parseError("Invalid period: " + std::string(*value));
+            }
+
+            overrides.period_ms = *parsed;
             continue;
         }
 

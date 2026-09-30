@@ -34,13 +34,13 @@ Implemented:
 - Linux SocketCAN output backend
 - Output factory
 - CAN signal map file at `config/can-signals.yaml`
+- Timed repeated sending with `--duration` and `--period-ms`
 - Unit tests and CLI smoke test through CTest
 - GitHub Actions CI with Linux `vcan0` SocketCAN smoke test
 - README and architecture docs
 
 Not implemented yet:
 
-- Time-based repeated CAN sending
 - Runtime scheduler for different CAN message periods
 - Loading `config/can-signals.yaml` into the encoder
 - Fault names such as `engine_overheat`
@@ -222,25 +222,8 @@ modprobe: FATAL: Module vcan not found
 
 ## Recommended Next Implementation Step
 
-Add a timed sending mode so the simulator behaves more like a real CAN source.
-
-Suggested CLI shape:
-
-```bash
-./build/cansim --scenario cruise --duration 10 --period-ms 100 --output socketcan --interface vcan0
-```
-
-First small implementation:
-
-1. Add `duration_seconds` or `duration_ms` to `CliOptions`.
-2. Add `period_ms` to `CliOptions`.
-3. Parse `--duration` and `--period-ms`.
-4. In `main.cpp`, if duration is set, loop until time expires.
-5. Sleep between frame bursts.
-6. Add CLI parser tests.
-7. Add a short smoke test that uses a tiny duration.
-
-Later improvement:
+Add a runtime scheduler that sends each CAN message on its own period instead of sending every
+message in every timed burst.
 
 - Use per-message periods from the signal map:
   - `0x100`, `0x101`, `0x103`: 100 ms

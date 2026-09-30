@@ -54,6 +54,7 @@ Implemented so far:
 - Linux SocketCAN output adapter for `vcan0` and real CAN interfaces
 - Versioned CAN signal map in `config/can-signals.yaml`
 - CAN output factory for CLI-selected output creation
+- Timed repeated sending with `--duration` and `--period-ms`
 - CTest-registered encoder, CLI parser, scenario, output, smoke, and formatting tests
 - GitHub Actions workflow
 
@@ -145,6 +146,12 @@ Run with a scenario:
 
 ```bash
 ./build/cansim --scenario cruise --frames 1
+```
+
+Run for a timed duration, sending one full CAN frame burst each period:
+
+```bash
+./build/cansim --scenario cruise --duration 10 --period-ms 100 --output console
 ```
 
 On Linux, send frames to SocketCAN:

@@ -3,6 +3,7 @@
 #include "cansim/vehicle_state.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace cansim {
@@ -23,6 +24,8 @@ struct CliOptions {
     int gear{3};
     std::uint16_t active_dtc{0};
     int frames{1};
+    std::optional<double> duration_seconds{};
+    int period_ms{100};
     OutputMode output_mode{OutputMode::console};
     std::string interface_name{"vcan0"};
 };
