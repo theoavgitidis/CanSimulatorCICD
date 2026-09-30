@@ -6,7 +6,7 @@ The simulator will generate fake vehicle telemetry, encode it into CAN frames, a
 
 ## Current Status
 
-This repository has the first minimal C++ implementation slice.
+This repository has a working first C++ CLI implementation slice.
 
 Implemented so far:
 
@@ -17,17 +17,18 @@ Implemented so far:
 - CMake project skeleton
 - `CanFrame` type
 - `VehicleState` type
-- First CAN encoder function for `0x100` `VehicleMotion`
-- CLI executable that prints one encoded CAN frame
-- CTest-registered unit test
+- CAN encoders for `0x100`, `0x101`, `0x102`, `0x103`, and `0x700`
+- CLI executable with arguments for speed, throttle, brake, RPM, temperature, fuel, battery, gear, diagnostics, and frame count
+- CLI parsing module
+- CTest-registered encoder, CLI parser, and smoke tests
+- GitHub Actions workflow
 
 Not implemented yet:
 
-- Full CLI argument parsing
-- Additional CAN messages
 - Scenario engine
 - SocketCAN output
-- GitHub Actions workflow
+- Signal map YAML loading
+- `encodeAll()` frame collection helper
 
 ## Project Goals
 
