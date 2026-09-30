@@ -25,9 +25,10 @@ struct CliOptions {
     std::uint16_t active_dtc{0};
     int frames{1};
     std::optional<double> duration_seconds{};
-    int period_ms{100};
+    std::optional<int> period_ms{};
     OutputMode output_mode{OutputMode::console};
     std::string interface_name{"vcan0"};
+    std::string signal_map_path{"config/can-signals.yaml"};
 };
 
 enum class CliParseStatus {

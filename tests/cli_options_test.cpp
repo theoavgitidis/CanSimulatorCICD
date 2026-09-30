@@ -97,13 +97,15 @@ bool testParsesAllOptions() {
     char arg22[] = "0.25";
     char arg23[] = "--period-ms";
     char arg24[] = "20";
-    char arg25[] = "--output";
-    char arg26[] = "console";
-    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,  arg7,  arg8,
-                    arg9,  arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17,
-                    arg18, arg19, arg20, arg21, arg22, arg23, arg24, arg25, arg26};
+    char arg25[] = "--signal-map";
+    char arg26[] = "custom-signals.yaml";
+    char arg27[] = "--output";
+    char arg28[] = "console";
+    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,  arg7,  arg8,  arg9,
+                    arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19,
+                    arg20, arg21, arg22, arg23, arg24, arg25, arg26, arg27, arg28};
 
-    const cansim::CliParseResult result = cansim::parseCliOptions(27, argv);
+    const cansim::CliParseResult result = cansim::parseCliOptions(29, argv);
 
     bool passed = true;
     passed &= expectStatus("all options status", result.status, cansim::CliParseStatus::ok);
@@ -119,8 +121,11 @@ bool testParsesAllOptions() {
     passed &= expectEqual("frames", result.options.frames, 3);
     passed &= expectTrue("duration present", result.options.duration_seconds.has_value());
     passed &= expectDouble("duration", *result.options.duration_seconds, 0.25);
-    passed &= expectEqual("period", result.options.period_ms, 20);
+    passed &= expectTrue("period present", result.options.period_ms.has_value());
+    passed &= expectEqual("period", *result.options.period_ms, 20);
     passed &= expectEqual("output mode", result.options.output_mode, cansim::OutputMode::console);
+    passed &=
+        expectString("signal map path", result.options.signal_map_path, "custom-signals.yaml");
     return passed;
 }
 
@@ -248,6 +253,16 @@ bool testInvalidPeriodFails() {
     return expectStatus("invalid period status", result.status, cansim::CliParseStatus::error);
 }
 
+bool testInvalidSignalMapFails() {
+    char arg0[] = "cansim";
+    char arg1[] = "--signal-map";
+    char arg2[] = "";
+    char* argv[] = {arg0, arg1, arg2};
+
+    const cansim::CliParseResult result = cansim::parseCliOptions(3, argv);
+    return expectStatus("invalid signal map status", result.status, cansim::CliParseStatus::error);
+}
+
 bool testMissingValueFails() {
     char arg0[] = "cansim";
     char arg1[] = "--speed";
@@ -299,6 +314,7 @@ int main() {
     passed &= testInvalidOutputModeFails();
     passed &= testInvalidDurationFails();
     passed &= testInvalidPeriodFails();
+    passed &= testInvalidSignalMapFails();
     passed &= testMissingValueFails();
     passed &= testStateConversion();
 

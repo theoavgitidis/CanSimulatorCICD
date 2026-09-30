@@ -29,6 +29,7 @@ struct CliOverrides {
     std::optional<int> period_ms{};
     std::optional<OutputMode> output_mode{};
     std::optional<std::string> interface_name{};
+    std::optional<std::string> signal_map_path{};
 };
 
 [[nodiscard]] CliParseResult parseError(std::string message) {
@@ -207,6 +208,10 @@ void applyOverrides(CliOptions& options, const CliOverrides& overrides) {
     if (overrides.interface_name.has_value()) {
         options.interface_name = *overrides.interface_name;
     }
+
+    if (overrides.signal_map_path.has_value()) {
+        options.signal_map_path = *overrides.signal_map_path;
+    }
 }
 
 } // namespace
@@ -217,7 +222,8 @@ std::string cliUsage() {
            "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
            "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
            "[--dtc CODE] [--frames COUNT] [--duration SECONDS] "
-           "[--period-ms MS] [--output console|socketcan] [--interface IFACE]\n";
+           "[--period-ms MS] [--signal-map PATH] "
+           "[--output console|socketcan] [--interface IFACE]\n";
 }
 
 CliParseResult parseCliOptions(int argc, char* argv[]) {
@@ -437,6 +443,21 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
             }
 
             overrides.period_ms = *parsed;
+            continue;
+        }
+
+        if (arg == "--signal-map") {
+            std::string error;
+            const std::optional<const char*> value = readNextValue(argc, argv, i, arg, error);
+            if (!value.has_value()) {
+                return parseError(error);
+            }
+
+            if (std::string_view{*value}.empty()) {
+                return parseError("Invalid signal map: empty path");
+            }
+
+            overrides.signal_map_path = std::string{*value};
             continue;
         }
 

@@ -54,13 +54,14 @@ Implemented so far:
 - Linux SocketCAN output adapter for `vcan0` and real CAN interfaces
 - Versioned CAN signal map in `config/can-signals.yaml`
 - CAN output factory for CLI-selected output creation
-- Timed repeated sending with `--duration` and `--period-ms`
+- Timed repeated sending with per-message periods loaded from `config/can-signals.yaml`
+- Fixed-period timing override with `--period-ms`
 - CTest-registered encoder, CLI parser, scenario, output, smoke, and formatting tests
 - GitHub Actions workflow
 
 Not implemented yet:
 
-- CAN signal map YAML loading
+- CAN signal map YAML loading for encoder signal definitions
 - Time-based scenario updates
 
 ## Project Goals
@@ -148,10 +149,22 @@ Run with a scenario:
 ./build/cansim --scenario cruise --frames 1
 ```
 
-Run for a timed duration, sending one full CAN frame burst each period:
+Run for a timed duration using the per-message periods in `config/can-signals.yaml`:
 
 ```bash
-./build/cansim --scenario cruise --duration 10 --period-ms 100 --output console
+./build/cansim --scenario cruise --duration 10 --output console
+```
+
+Override all message periods with one fixed test cadence:
+
+```bash
+./build/cansim --scenario cruise --duration 1 --period-ms 100 --output console
+```
+
+Use a different signal map file:
+
+```bash
+./build/cansim --scenario cruise --duration 10 --signal-map config/can-signals.yaml --output console
 ```
 
 On Linux, send frames to SocketCAN:

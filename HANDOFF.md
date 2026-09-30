@@ -34,15 +34,16 @@ Implemented:
 - Linux SocketCAN output backend
 - Output factory
 - CAN signal map file at `config/can-signals.yaml`
-- Timed repeated sending with `--duration` and `--period-ms`
+- Timed repeated sending with per-message periods loaded from `config/can-signals.yaml`
+- Fixed-period timing override with `--period-ms`
+- Testable `CanScheduler` module
 - Unit tests and CLI smoke test through CTest
 - GitHub Actions CI with Linux `vcan0` SocketCAN smoke test
 - README and architecture docs
 
 Not implemented yet:
 
-- Runtime scheduler for different CAN message periods
-- Loading `config/can-signals.yaml` into the encoder
+- Loading signal packing definitions from `config/can-signals.yaml` into the encoder
 - Fault names such as `engine_overheat`
 - `--print-state`
 - Real hardware USB-CAN validation
@@ -54,6 +55,8 @@ Not implemented yet:
 - `src/main.cpp`: CLI executable entry point
 - `include/cansim/cli_options.hpp` and `src/cli_options.cpp`: CLI parsing
 - `include/cansim/can_encoder.hpp` and `src/can_encoder.cpp`: CAN frame encoding
+- `include/cansim/can_scheduler.hpp` and `src/can_scheduler.cpp`: per-message timing
+- `include/cansim/can_signal_map.hpp` and `src/can_signal_map.cpp`: schedule loading from `config/can-signals.yaml`
 - `include/cansim/can_output.hpp`: output interface
 - `src/console_can_output.cpp`: terminal output backend
 - `src/socket_can_output_linux.cpp`: Linux SocketCAN backend
@@ -81,6 +84,12 @@ Run console output:
 
 ```bash
 ./build/cansim --scenario cruise --frames 1 --output console
+```
+
+Run scheduled timed output from the repository root:
+
+```bash
+./build/cansim --scenario cruise --duration 10 --output console
 ```
 
 Expected macOS SocketCAN behavior:
@@ -219,16 +228,15 @@ modprobe: FATAL: Module vcan not found
 - macOS cannot run the SocketCAN backend.
 - Each VM needs its own `vcan0` setup.
 - `candump vcan0` waits silently until frames arrive.
+- Duration mode loads `config/can-signals.yaml` relative to the current working directory unless `--signal-map PATH` is provided.
 
 ## Recommended Next Implementation Step
 
-Add a runtime scheduler that sends each CAN message on its own period instead of sending every
-message in every timed burst.
+Load the signal packing definitions from `config/can-signals.yaml` into the encoder instead of
+hardcoding byte positions, scales, and limits in `src/can_encoder.cpp`.
 
-- Use per-message periods from the signal map:
-  - `0x100`, `0x101`, `0x103`: 100 ms
-  - `0x102`: 500 ms
-  - `0x700`: 1000 ms
+Keep the current hardcoded encoder behavior as the compatibility baseline while introducing tests
+that prove YAML-driven encoding produces the same frames.
 
 ## Quick Resume Commands
 

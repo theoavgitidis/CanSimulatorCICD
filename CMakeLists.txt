@@ -12,6 +12,8 @@ set(CANSIM_FORMAT_FILES
     include/cansim/can_frame.hpp
     include/cansim/can_output.hpp
     include/cansim/can_output_factory.hpp
+    include/cansim/can_scheduler.hpp
+    include/cansim/can_signal_map.hpp
     include/cansim/cli_options.hpp
     include/cansim/console_can_output.hpp
     include/cansim/recording_can_output.hpp
@@ -20,12 +22,16 @@ set(CANSIM_FORMAT_FILES
     include/cansim/vehicle_state.hpp
     src/can_encoder.cpp
     src/can_output_factory.cpp
+    src/can_scheduler.cpp
+    src/can_signal_map.cpp
     src/cli_options.cpp
     src/console_can_output.cpp
     src/main.cpp
     src/scenario.cpp
     src/socket_can_output_linux.cpp
     tests/can_encoder_test.cpp
+    tests/can_scheduler_test.cpp
+    tests/can_signal_map_test.cpp
     tests/cli_options_test.cpp
     tests/can_output_factory_test.cpp
     tests/can_output_test.cpp
@@ -35,6 +41,8 @@ set(CANSIM_FORMAT_FILES
 add_library(cansim_core
     src/can_encoder.cpp
     src/can_output_factory.cpp
+    src/can_scheduler.cpp
+    src/can_signal_map.cpp
     src/cli_options.cpp
     src/console_can_output.cpp
     src/scenario.cpp
@@ -122,6 +130,31 @@ add_test(NAME cansim_cli_smoke COMMAND cansim --scenario cruise --speed 100 --th
 
 add_test(NAME cansim_cli_duration_smoke COMMAND cansim --scenario cruise --duration 0.002 --period-ms 1 --output console)
 
+add_test(NAME cansim_cli_scheduled_smoke COMMAND cansim --scenario cruise --duration 0.002 --output console)
+set_tests_properties(cansim_cli_scheduled_smoke PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_executable(cansim_scheduler_tests
+    tests/can_scheduler_test.cpp
+)
+
+target_link_libraries(cansim_scheduler_tests
+    PRIVATE
+        cansim_core
+)
+
+add_test(NAME cansim_scheduler_tests COMMAND cansim_scheduler_tests)
+
+add_executable(cansim_signal_map_tests
+    tests/can_signal_map_test.cpp
+)
+
+target_link_libraries(cansim_signal_map_tests
+    PRIVATE
+        cansim_core
+)
+
+add_test(NAME cansim_signal_map_tests COMMAND cansim_signal_map_tests)
+
 find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format)
 if(CLANG_FORMAT_EXECUTABLE)
     add_custom_target(format
@@ -153,3 +186,5 @@ cansim_enable_warnings(cansim_cli_options_tests)
 cansim_enable_warnings(cansim_scenario_tests)
 cansim_enable_warnings(cansim_output_tests)
 cansim_enable_warnings(cansim_output_factory_tests)
+cansim_enable_warnings(cansim_scheduler_tests)
+cansim_enable_warnings(cansim_signal_map_tests)
