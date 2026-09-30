@@ -16,7 +16,7 @@ bool expectEqual(const char* name, std::uint32_t actual, std::uint32_t expected)
     return false;
 }
 
-}  // namespace
+} // namespace
 
 int main() {
     const cansim::VehicleState state{

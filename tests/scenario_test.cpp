@@ -41,7 +41,7 @@ bool expectDouble(const char* name, double actual, double expected) {
     return false;
 }
 
-}  // namespace
+} // namespace
 
 int main() {
     bool passed = true;

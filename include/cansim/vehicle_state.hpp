@@ -16,4 +16,4 @@ struct VehicleState {
     std::uint16_t active_dtc{0};
 };
 
-}  // namespace cansim
+} // namespace cansim

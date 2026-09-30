@@ -12,14 +12,14 @@ void printFrame(const cansim::CanFrame& frame) {
               << static_cast<int>(frame.dlc) << "]";
 
     for (std::size_t i = 0; i < frame.dlc; ++i) {
-        std::cout << ' ' << std::hex << std::uppercase << std::setw(2)
-                  << std::setfill('0') << static_cast<int>(frame.data[i]);
+        std::cout << ' ' << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
+                  << static_cast<int>(frame.data[i]);
     }
 
     std::cout << '\n';
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char* argv[]) {
     const cansim::CliParseResult parse_result = cansim::parseCliOptions(argc, argv);

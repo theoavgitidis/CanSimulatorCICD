@@ -43,7 +43,8 @@ bool expectDouble(const char* name, double actual, double expected) {
     return false;
 }
 
-bool expectStatus(const char* name, cansim::CliParseStatus actual, cansim::CliParseStatus expected) {
+bool expectStatus(const char* name, cansim::CliParseStatus actual,
+                  cansim::CliParseStatus expected) {
     if (actual == expected) {
         return true;
     }
@@ -74,9 +75,8 @@ bool testParsesAllOptions() {
     char arg18[] = "0x0420";
     char arg19[] = "--frames";
     char arg20[] = "3";
-    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,
-                    arg7,  arg8,  arg9,  arg10, arg11, arg12, arg13,
-                    arg14, arg15, arg16, arg17, arg18, arg19, arg20};
+    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,  arg7,  arg8,  arg9, arg10,
+                    arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20};
 
     const cansim::CliParseResult result = cansim::parseCliOptions(21, argv);
 
@@ -207,7 +207,7 @@ bool testStateConversion() {
     return passed;
 }
 
-}  // namespace
+} // namespace
 
 int main() {
     bool passed = true;

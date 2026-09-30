@@ -7,6 +7,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CANSIM_FORMAT_FILES
+    include/cansim/can_encoder.hpp
+    include/cansim/can_frame.hpp
+    include/cansim/cli_options.hpp
+    include/cansim/scenario.hpp
+    include/cansim/vehicle_state.hpp
+    src/can_encoder.cpp
+    src/cli_options.cpp
+    src/main.cpp
+    src/scenario.cpp
+    tests/can_encoder_test.cpp
+    tests/cli_options_test.cpp
+    tests/scenario_test.cpp
+)
+
 add_library(cansim_core
     src/can_encoder.cpp
     src/cli_options.cpp
@@ -62,6 +77,22 @@ target_link_libraries(cansim_scenario_tests
 
 add_test(NAME cansim_scenario_tests COMMAND cansim_scenario_tests)
 add_test(NAME cansim_cli_smoke COMMAND cansim --scenario cruise --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1)
+
+find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format)
+if(CLANG_FORMAT_EXECUTABLE)
+    add_custom_target(format
+        COMMAND "${CLANG_FORMAT_EXECUTABLE}" -i ${CANSIM_FORMAT_FILES}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Formatting C++ sources"
+    )
+
+    add_test(NAME cansim_format_check
+        COMMAND "${CLANG_FORMAT_EXECUTABLE}" --dry-run --Werror ${CANSIM_FORMAT_FILES}
+    )
+    set_tests_properties(cansim_format_check PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+else()
+    message(STATUS "clang-format not found; format target and format check test are disabled")
+endif()
 
 function(cansim_enable_warnings target_name)
     if(MSVC)

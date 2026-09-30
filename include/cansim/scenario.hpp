@@ -16,4 +16,4 @@ enum class Scenario {
 [[nodiscard]] std::optional<Scenario> parseScenario(std::string_view name);
 [[nodiscard]] VehicleState vehicleStateForScenario(Scenario scenario);
 
-}  // namespace cansim
+} // namespace cansim

@@ -140,6 +140,24 @@ Run tests:
 ctest --test-dir build --output-on-failure
 ```
 
+Format C++ files:
+
+```bash
+cmake --build build --target format
+```
+
+Check formatting through CTest:
+
+```bash
+ctest --test-dir build -R cansim_format_check --output-on-failure
+```
+
+If `clang-format` is missing on macOS, install it with:
+
+```bash
+brew install clang-format
+```
+
 ## Planned CLI Usage
 
 These commands describe the intended interface. They will become valid once the simulator executable exists.

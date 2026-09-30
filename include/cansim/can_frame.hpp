@@ -11,4 +11,4 @@ struct CanFrame {
     std::uint8_t dlc{8};
 };
 
-}  // namespace cansim
+} // namespace cansim

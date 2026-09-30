@@ -100,11 +100,8 @@ struct CliOverrides {
     return std::nullopt;
 }
 
-[[nodiscard]] std::optional<const char*> readNextValue(int argc,
-                                                       char* argv[],
-                                                       int& index,
-                                                       std::string_view option,
-                                                       std::string& error) {
+[[nodiscard]] std::optional<const char*>
+readNextValue(int argc, char* argv[], int& index, std::string_view option, std::string& error) {
     if (index + 1 >= argc) {
         error = "Missing value for " + std::string(option);
         return std::nullopt;
@@ -169,7 +166,7 @@ void applyOverrides(CliOptions& options, const CliOverrides& overrides) {
     }
 }
 
-}  // namespace
+} // namespace
 
 std::string cliUsage() {
     return "Usage: cansim [--scenario idle|cruise|braking] "
@@ -395,4 +392,4 @@ VehicleState toVehicleState(const CliOptions& options) {
     };
 }
 
-}  // namespace cansim
+} // namespace cansim

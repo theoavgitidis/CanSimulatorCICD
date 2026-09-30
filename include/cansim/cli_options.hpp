@@ -36,4 +36,4 @@ struct CliParseResult {
 [[nodiscard]] VehicleState toVehicleState(const CliOptions& options);
 [[nodiscard]] std::string cliUsage();
 
-}  // namespace cansim
+} // namespace cansim
