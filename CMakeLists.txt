@@ -94,7 +94,7 @@ target_link_libraries(cansim_output_tests
 
 add_test(NAME cansim_output_tests COMMAND cansim_output_tests)
 
-add_test(NAME cansim_cli_smoke COMMAND cansim --scenario cruise --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1)
+add_test(NAME cansim_cli_smoke COMMAND cansim --scenario cruise --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1 --output console)
 
 find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format)
 if(CLANG_FORMAT_EXECUTABLE)

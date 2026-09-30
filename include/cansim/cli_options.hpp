@@ -7,6 +7,10 @@
 
 namespace cansim {
 
+enum class OutputMode {
+    console,
+};
+
 struct CliOptions {
     double speed_kph{100.0};
     double throttle_percent{50.0};
@@ -18,6 +22,7 @@ struct CliOptions {
     int gear{3};
     std::uint16_t active_dtc{0};
     int frames{1};
+    OutputMode output_mode{OutputMode::console};
 };
 
 enum class CliParseStatus {

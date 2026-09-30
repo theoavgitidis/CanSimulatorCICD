@@ -22,6 +22,11 @@ int main(int argc, char* argv[]) {
     const cansim::CanEncoder encoder;
     cansim::ConsoleCanOutput output{std::cout};
 
+    if (parse_result.options.output_mode != cansim::OutputMode::console) {
+        std::cerr << "Unsupported output mode\n";
+        return 1;
+    }
+
     for (int i = 0; i < parse_result.options.frames; ++i) {
         for (const cansim::CanFrame& frame : encoder.encodeAll(state)) {
             output.send(frame);

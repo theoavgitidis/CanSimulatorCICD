@@ -23,6 +23,7 @@ struct CliOverrides {
     std::optional<int> gear{};
     std::optional<std::uint16_t> active_dtc{};
     std::optional<int> frames{};
+    std::optional<OutputMode> output_mode{};
 };
 
 [[nodiscard]] CliParseResult parseError(std::string message) {
@@ -100,6 +101,14 @@ struct CliOverrides {
     return std::nullopt;
 }
 
+[[nodiscard]] std::optional<OutputMode> parseOutputMode(std::string_view value) {
+    if (value == "console") {
+        return OutputMode::console;
+    }
+
+    return std::nullopt;
+}
+
 [[nodiscard]] std::optional<const char*>
 readNextValue(int argc, char* argv[], int& index, std::string_view option, std::string& error) {
     if (index + 1 >= argc) {
@@ -164,6 +173,10 @@ void applyOverrides(CliOptions& options, const CliOverrides& overrides) {
     if (overrides.frames.has_value()) {
         options.frames = *overrides.frames;
     }
+
+    if (overrides.output_mode.has_value()) {
+        options.output_mode = *overrides.output_mode;
+    }
 }
 
 } // namespace
@@ -173,7 +186,7 @@ std::string cliUsage() {
            "[--speed KPH] [--throttle PERCENT] "
            "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
            "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
-           "[--dtc CODE] [--frames COUNT]\n";
+           "[--dtc CODE] [--frames COUNT] [--output console]\n";
 }
 
 CliParseResult parseCliOptions(int argc, char* argv[]) {
@@ -361,6 +374,22 @@ CliParseResult parseCliOptions(int argc, char* argv[]) {
             }
 
             overrides.frames = *parsed;
+            continue;
+        }
+
+        if (arg == "--output") {
+            std::string error;
+            const std::optional<const char*> value = readNextValue(argc, argv, i, arg, error);
+            if (!value.has_value()) {
+                return parseError(error);
+            }
+
+            const std::optional<OutputMode> parsed = parseOutputMode(*value);
+            if (!parsed.has_value()) {
+                return parseError("Invalid output mode: " + std::string(*value));
+            }
+
+            overrides.output_mode = *parsed;
             continue;
         }
 

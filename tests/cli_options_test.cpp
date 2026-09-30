@@ -34,6 +34,15 @@ bool expectEqual(const char* name, std::uint16_t actual, std::uint16_t expected)
     return false;
 }
 
+bool expectEqual(const char* name, cansim::OutputMode actual, cansim::OutputMode expected) {
+    if (actual == expected) {
+        return true;
+    }
+
+    std::cerr << name << " had unexpected output mode\n";
+    return false;
+}
+
 bool expectDouble(const char* name, double actual, double expected) {
     if (std::fabs(actual - expected) < 0.0001) {
         return true;
@@ -75,10 +84,13 @@ bool testParsesAllOptions() {
     char arg18[] = "0x0420";
     char arg19[] = "--frames";
     char arg20[] = "3";
-    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,  arg7,  arg8,  arg9, arg10,
-                    arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20};
+    char arg21[] = "--output";
+    char arg22[] = "console";
+    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,  arg7,
+                    arg8,  arg9,  arg10, arg11, arg12, arg13, arg14, arg15,
+                    arg16, arg17, arg18, arg19, arg20, arg21, arg22};
 
-    const cansim::CliParseResult result = cansim::parseCliOptions(21, argv);
+    const cansim::CliParseResult result = cansim::parseCliOptions(23, argv);
 
     bool passed = true;
     passed &= expectStatus("all options status", result.status, cansim::CliParseStatus::ok);
@@ -92,6 +104,7 @@ bool testParsesAllOptions() {
     passed &= expectEqual("gear", result.options.gear, -1);
     passed &= expectEqual("dtc", result.options.active_dtc, static_cast<std::uint16_t>(0x0420));
     passed &= expectEqual("frames", result.options.frames, 3);
+    passed &= expectEqual("output mode", result.options.output_mode, cansim::OutputMode::console);
     return passed;
 }
 
@@ -171,6 +184,16 @@ bool testInvalidDtcFails() {
     return expectStatus("invalid dtc status", result.status, cansim::CliParseStatus::error);
 }
 
+bool testInvalidOutputModeFails() {
+    char arg0[] = "cansim";
+    char arg1[] = "--output";
+    char arg2[] = "socketcan";
+    char* argv[] = {arg0, arg1, arg2};
+
+    const cansim::CliParseResult result = cansim::parseCliOptions(3, argv);
+    return expectStatus("invalid output mode status", result.status, cansim::CliParseStatus::error);
+}
+
 bool testMissingValueFails() {
     char arg0[] = "cansim";
     char arg1[] = "--speed";
@@ -218,6 +241,7 @@ int main() {
     passed &= testInvalidScenarioFails();
     passed &= testInvalidGearFails();
     passed &= testInvalidDtcFails();
+    passed &= testInvalidOutputModeFails();
     passed &= testMissingValueFails();
     passed &= testStateConversion();
 
