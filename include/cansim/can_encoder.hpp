@@ -10,6 +10,7 @@ public:
     [[nodiscard]] CanFrame encodeVehicleMotion(const VehicleState& state) const;
     [[nodiscard]] CanFrame encodeEngineStatus(const VehicleState& state) const;
     [[nodiscard]] CanFrame encodePowerStatus(const VehicleState& state) const;
+    [[nodiscard]] CanFrame encodeGearStatus(const VehicleState& state) const;
 };
 
 }  // namespace cansim

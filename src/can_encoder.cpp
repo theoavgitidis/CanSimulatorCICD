@@ -10,6 +10,7 @@ namespace {
 constexpr std::uint32_t kVehicleMotionCanId = 0x100;
 constexpr std::uint32_t kEngineStatusCanId = 0x101;
 constexpr std::uint32_t kPowerStatusCanId = 0x102;
+constexpr std::uint32_t kGearStatusCanId = 0x103;
 constexpr double kSpeedScale = 0.01;
 constexpr double kVoltageScale = 0.01;
 
@@ -41,6 +42,11 @@ constexpr double kVoltageScale = 0.01;
 [[nodiscard]] std::uint16_t encodeBatteryVoltage(double battery_voltage) {
     const double clamped = std::clamp(battery_voltage, 0.0, 655.35);
     return static_cast<std::uint16_t>(std::lround(clamped / kVoltageScale));
+}
+
+[[nodiscard]] std::uint8_t encodeGear(int gear) {
+    const int clamped = std::clamp(gear, -1, 8);
+    return static_cast<std::uint8_t>(clamped + 1);
 }
 
 }  // namespace
@@ -81,6 +87,16 @@ CanFrame CanEncoder::encodePowerStatus(const VehicleState& state) const {
     frame.data[0] = encodeFuel(state.fuel_percent);
     frame.data[1] = static_cast<std::uint8_t>(voltage_raw & 0xFF);
     frame.data[2] = static_cast<std::uint8_t>((voltage_raw >> 8) & 0xFF);
+
+    return frame;
+}
+
+CanFrame CanEncoder::encodeGearStatus(const VehicleState& state) const {
+    CanFrame frame{};
+    frame.id = kGearStatusCanId;
+    frame.dlc = 8;
+
+    frame.data[0] = encodeGear(state.gear);
 
     return frame;
 }

@@ -19,13 +19,14 @@ struct CliOptions {
     double engine_temp_c{90.0};
     double fuel_percent{75.0};
     double battery_voltage{12.6};
+    int gear{3};
     int frames{1};
 };
 
 void printUsage() {
     std::cout << "Usage: cansim [--speed KPH] [--throttle PERCENT] "
                  "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
-                 "[--fuel PERCENT] [--battery VOLTS] "
+                 "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
                  "[--frames COUNT]\n";
 }
 
@@ -47,6 +48,18 @@ std::optional<int> parsePositiveInt(const char* value) {
     const long parsed = std::strtol(value, &end, 10);
 
     if (end == value || *end != '\0' || errno == ERANGE || parsed <= 0) {
+        return std::nullopt;
+    }
+
+    return static_cast<int>(parsed);
+}
+
+std::optional<int> parseInt(const char* value) {
+    char* end{};
+    errno = 0;
+    const long parsed = std::strtol(value, &end, 10);
+
+    if (end == value || *end != '\0' || errno == ERANGE) {
         return std::nullopt;
     }
 
@@ -199,6 +212,22 @@ std::optional<CliOptions> parseArgs(int argc, char* argv[]) {
             continue;
         }
 
+        if (arg == "--gear") {
+            const char* value{};
+            if (!readNextValue(argc, argv, i, arg, value)) {
+                return std::nullopt;
+            }
+
+            const std::optional<int> parsed = parseInt(value);
+            if (!parsed.has_value()) {
+                std::cerr << "Invalid gear: " << value << '\n';
+                return std::nullopt;
+            }
+
+            options.gear = *parsed;
+            continue;
+        }
+
         if (arg == "--frames") {
             const char* value{};
             if (!readNextValue(argc, argv, i, arg, value)) {
@@ -253,6 +282,7 @@ int main(int argc, char* argv[]) {
         .engine_temp_c = options->engine_temp_c,
         .fuel_percent = options->fuel_percent,
         .battery_voltage = options->battery_voltage,
+        .gear = options->gear,
     };
 
     const cansim::CanEncoder encoder;
@@ -260,6 +290,7 @@ int main(int argc, char* argv[]) {
         printFrame(encoder.encodeVehicleMotion(state));
         printFrame(encoder.encodeEngineStatus(state));
         printFrame(encoder.encodePowerStatus(state));
+        printFrame(encoder.encodeGearStatus(state));
     }
 
     return 0;

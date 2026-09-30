@@ -37,7 +37,7 @@ target_link_libraries(cansim_tests
 )
 
 add_test(NAME cansim_tests COMMAND cansim_tests)
-add_test(NAME cansim_cli_smoke COMMAND cansim --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --frames 1)
+add_test(NAME cansim_cli_smoke COMMAND cansim --speed 100 --throttle 50 --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --frames 1)
 
 function(cansim_enable_warnings target_name)
     if(MSVC)
