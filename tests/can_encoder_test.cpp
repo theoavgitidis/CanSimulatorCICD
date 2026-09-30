@@ -27,6 +27,7 @@ int main() {
         .fuel_percent = 75.0,
         .battery_voltage = 12.6,
         .gear = 3,
+        .active_dtc = 0x0420,
     };
 
     const cansim::CanEncoder encoder;
@@ -34,6 +35,7 @@ int main() {
     const cansim::CanFrame engine_frame = encoder.encodeEngineStatus(state);
     const cansim::CanFrame power_frame = encoder.encodePowerStatus(state);
     const cansim::CanFrame gear_frame = encoder.encodeGearStatus(state);
+    const cansim::CanFrame diagnostics_frame = encoder.encodeDiagnostics(state);
 
     bool passed = true;
     passed &= expectEqual("motion CAN ID", motion_frame.id, 0x100);
@@ -58,6 +60,12 @@ int main() {
     passed &= expectEqual("gear CAN ID", gear_frame.id, 0x103);
     passed &= expectEqual("gear DLC", gear_frame.dlc, 8);
     passed &= expectEqual("gear byte", gear_frame.data[0], 0x04);
+
+    passed &= expectEqual("diagnostics CAN ID", diagnostics_frame.id, 0x700);
+    passed &= expectEqual("diagnostics DLC", diagnostics_frame.dlc, 8);
+    passed &= expectEqual("diagnostics active byte", diagnostics_frame.data[0], 0x01);
+    passed &= expectEqual("diagnostics code byte 0", diagnostics_frame.data[1], 0x20);
+    passed &= expectEqual("diagnostics code byte 1", diagnostics_frame.data[2], 0x04);
 
     return passed ? 0 : 1;
 }

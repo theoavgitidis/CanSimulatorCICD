@@ -2,6 +2,7 @@
 #include "cansim/vehicle_state.hpp"
 
 #include <cerrno>
+#include <cstdint>
 #include <cstdlib>
 #include <cstddef>
 #include <iomanip>
@@ -20,6 +21,7 @@ struct CliOptions {
     double fuel_percent{75.0};
     double battery_voltage{12.6};
     int gear{3};
+    std::uint16_t active_dtc{0};
     int frames{1};
 };
 
@@ -27,7 +29,7 @@ void printUsage() {
     std::cout << "Usage: cansim [--speed KPH] [--throttle PERCENT] "
                  "[--brake true|false] [--rpm RPM] [--engine-temp CELSIUS] "
                  "[--fuel PERCENT] [--battery VOLTS] [--gear GEAR] "
-                 "[--frames COUNT]\n";
+                 "[--dtc CODE] [--frames COUNT]\n";
 }
 
 std::optional<double> parseDouble(const char* value) {
@@ -64,6 +66,18 @@ std::optional<int> parseInt(const char* value) {
     }
 
     return static_cast<int>(parsed);
+}
+
+std::optional<std::uint16_t> parseDtcCode(const char* value) {
+    char* end{};
+    errno = 0;
+    const unsigned long parsed = std::strtoul(value, &end, 0);
+
+    if (end == value || *end != '\0' || errno == ERANGE || parsed > 0xFFFFUL) {
+        return std::nullopt;
+    }
+
+    return static_cast<std::uint16_t>(parsed);
 }
 
 std::optional<bool> parseBool(std::string_view value) {
@@ -228,6 +242,22 @@ std::optional<CliOptions> parseArgs(int argc, char* argv[]) {
             continue;
         }
 
+        if (arg == "--dtc") {
+            const char* value{};
+            if (!readNextValue(argc, argv, i, arg, value)) {
+                return std::nullopt;
+            }
+
+            const std::optional<std::uint16_t> parsed = parseDtcCode(value);
+            if (!parsed.has_value()) {
+                std::cerr << "Invalid diagnostic trouble code: " << value << '\n';
+                return std::nullopt;
+            }
+
+            options.active_dtc = *parsed;
+            continue;
+        }
+
         if (arg == "--frames") {
             const char* value{};
             if (!readNextValue(argc, argv, i, arg, value)) {
@@ -283,6 +313,7 @@ int main(int argc, char* argv[]) {
         .fuel_percent = options->fuel_percent,
         .battery_voltage = options->battery_voltage,
         .gear = options->gear,
+        .active_dtc = options->active_dtc,
     };
 
     const cansim::CanEncoder encoder;
@@ -291,6 +322,7 @@ int main(int argc, char* argv[]) {
         printFrame(encoder.encodeEngineStatus(state));
         printFrame(encoder.encodePowerStatus(state));
         printFrame(encoder.encodeGearStatus(state));
+        printFrame(encoder.encodeDiagnostics(state));
     }
 
     return 0;

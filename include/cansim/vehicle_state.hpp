@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace cansim {
 
 struct VehicleState {
@@ -11,6 +13,7 @@ struct VehicleState {
     double fuel_percent{0.0};
     double battery_voltage{0.0};
     int gear{0};
+    std::uint16_t active_dtc{0};
 };
 
 }  // namespace cansim

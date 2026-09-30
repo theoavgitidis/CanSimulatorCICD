@@ -11,6 +11,7 @@ constexpr std::uint32_t kVehicleMotionCanId = 0x100;
 constexpr std::uint32_t kEngineStatusCanId = 0x101;
 constexpr std::uint32_t kPowerStatusCanId = 0x102;
 constexpr std::uint32_t kGearStatusCanId = 0x103;
+constexpr std::uint32_t kDiagnosticsCanId = 0x700;
 constexpr double kSpeedScale = 0.01;
 constexpr double kVoltageScale = 0.01;
 
@@ -97,6 +98,18 @@ CanFrame CanEncoder::encodeGearStatus(const VehicleState& state) const {
     frame.dlc = 8;
 
     frame.data[0] = encodeGear(state.gear);
+
+    return frame;
+}
+
+CanFrame CanEncoder::encodeDiagnostics(const VehicleState& state) const {
+    CanFrame frame{};
+    frame.id = kDiagnosticsCanId;
+    frame.dlc = 8;
+
+    frame.data[0] = state.active_dtc == 0 ? 0U : 1U;
+    frame.data[1] = static_cast<std::uint8_t>(state.active_dtc & 0xFF);
+    frame.data[2] = static_cast<std::uint8_t>((state.active_dtc >> 8) & 0xFF);
 
     return frame;
 }

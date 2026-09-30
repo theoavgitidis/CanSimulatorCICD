@@ -99,12 +99,19 @@ Current output:
 0x101 [8] B8 0B 5A 00 00 00 00 00
 0x102 [8] 4B EC 04 00 00 00 00 00
 0x103 [8] 04 00 00 00 00 00 00 00
+0x700 [8] 00 00 00 00 00 00 00 00
 ```
 
 Run with simple CLI values:
 
 ```bash
-./build/cansim --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --frames 1
+./build/cansim --speed 100 --throttle 50 --brake false --rpm 3000 --engine-temp 90 --fuel 75 --battery 12.6 --gear 3 --dtc 0x0420 --frames 1
+```
+
+The diagnostics frame uses `00` when no fault is active. With `--dtc 0x0420`, it starts with:
+
+```text
+0x700 [8] 01 20 04 00 00 00 00 00
 ```
 
 Run tests:
