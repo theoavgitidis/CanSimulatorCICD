@@ -1,210 +1,179 @@
-# CAN Telemetry Simulator Architecture
+# CAN Telemetry System Architecture
+
+Last updated: 2026-10-02
 
 ## Status
 
-Planned.
+Partly implemented.
+
+`CanSim` is implemented as a host-side simulator. `CanDisplay` has the first hardware-independent decoder slice. ESP32-S3 TWAI integration, display rendering, and real bus validation are still planned.
 
 ## Context
 
-The project is a C++ vehicle telemetry simulator with a strong CI/CD focus. The simulator emits fake car data and exposes it in ways that are useful for software testing, CLI-driven development, later button-based control, and microcontroller display experiments.
+The project models a small vehicle telemetry pipeline. The simulator emits fake car data in the same shape that a future ESP32-S3 receiver should consume.
 
-The current direction is to continue with CAN as the primary vehicle-facing interface.
-
-The future real-world target path is:
+Final vehicle path:
 
 ```text
-Car -> Vehicle CAN bus -> Microcontroller CAN interface -> Display
+Car -> Vehicle CAN bus -> ESP32-S3 CAN interface -> Display
 ```
 
-The simulator exists to stand in for the car during development:
+Development path:
 
 ```text
-C++ Simulator -> vcan0 or USB-CAN adapter -> Microcontroller CAN interface -> Display
+CanSim -> console / vcan0 / USB-CAN adapter -> CanDisplay decoder -> future display renderer
 ```
 
-## Decisions
+The simulator does not directly call display code in the real hardware path. It emits CAN frames. The receiver listens to those frames as if they came from a vehicle.
 
-### 1. CAN is the primary simulator output
+## Project Boundaries
 
-The simulator will generate realistic vehicle telemetry and encode it into CAN frames.
+### CanSim
 
-Initial signals:
+`CanSim` owns vehicle-state generation and CAN frame transmission.
 
-- Vehicle speed
-- Engine RPM
-- Engine temperature
-- Fuel level
-- Battery voltage
-- Throttle position
-- Brake state
-- Gear
-- Diagnostic trouble codes
+Implemented responsibilities:
 
-The simulator should model vehicle state internally, then translate that state into CAN frames through a dedicated encoder layer.
+- Parse CLI options.
+- Select static scenarios: `idle`, `cruise`, and `braking`.
+- Apply manual telemetry overrides.
+- Encode vehicle state into CAN frames.
+- Load IDs, periods, and signal layout from `CanSim/config/can-signals.yaml`.
+- Send frames to console output, recording test output, or Linux SocketCAN.
+- Schedule messages by configured cycle time when `--duration` is used.
 
-```text
-Scenario Engine
-      |
-Vehicle State Model
-      |
-CAN Signal Encoder
-      |
-CAN Output Adapter
-```
+### CanDisplay
 
-### 2. SocketCAN is the first CAN backend
+`CanDisplay` owns receiver-side decoding and, later, display rendering.
 
-Linux SocketCAN will be the first supported CAN interface because it gives us two important modes:
+Implemented responsibilities:
 
-- `vcan` for local development and CI testing without hardware
-- Real CAN hardware through USB-CAN adapters on Linux
+- Represent a received CAN frame as `candisplay::CanFrameView`.
+- Decode simulator CAN frames into `candisplay::TelemetryState`.
+- Test decoder behavior on the host without ESP32 hardware.
 
-Example development flow:
+Planned responsibilities:
 
-```text
-C++ Simulator -> vcan0 -> test tools / integration tests
-```
+- Convert ESP32-S3 TWAI messages into `CanFrameView`.
+- Maintain latest telemetry state on device.
+- Render telemetry state on the chosen display.
+- Handle missing, stale, or invalid CAN data gracefully.
 
-Example hardware flow:
+## Current CAN Contract
 
-```text
-C++ Simulator -> can0 -> USB-CAN adapter -> CAN transceiver -> microcontroller
-```
-
-### 3. Microcontroller and display reachability
-
-A microcontroller can receive simulated data through a real CAN bus and use it to drive a display.
-
-Expected simulator-to-hardware development path:
-
-```text
-Computer running simulator
-      |
-USB-CAN adapter
-      |
-CANH / CANL
-      |
-CAN transceiver
-      |
-Microcontroller CAN controller
-      |
-Display
-```
-
-Expected final vehicle path:
-
-```text
-Car CAN bus
-      |
-CAN transceiver
-      |
-Microcontroller CAN controller
-      |
-Display
-```
-
-Good target boards:
-
-- ESP32 with TWAI CAN controller plus external CAN transceiver
-- STM32 board with built-in CAN controller plus transceiver
-- Arduino-style board with an MCP2515 CAN module
-
-The microcontroller does not call the simulator directly. It listens for CAN frames as if they came from a real vehicle bus. In the final setup, the real car replaces the simulator as the CAN frame source.
-
-### 4. Virtual CAN enables CI/CD testing
-
-The CI pipeline should test CAN behavior without requiring physical hardware.
-
-Planned CI checks:
-
-- Build the C++ simulator with CMake
-- Run unit tests for vehicle state transitions
-- Run unit tests for CAN frame encoding
-- Bring up a virtual CAN interface
-- Run integration tests against `vcan0`
-- Verify expected CAN IDs and payload values
-- Run formatting and static analysis checks
-
-Linux CI jobs can use `vcan` for integration tests. macOS and Windows jobs can still build and run non-SocketCAN unit tests.
-
-### 5. CAN message definitions are versioned project artifacts
-
-The project should keep CAN signal definitions in a versioned file instead of scattering IDs and bit layouts throughout the code.
-
-Planned format:
-
-- Start with a simple project-owned YAML or JSON signal map
-- Optionally add DBC import/export later
-
-Example:
-
-```yaml
-messages:
-  - name: VehicleSpeed
-    id: 0x100
-    cycle_ms: 100
-    signals:
-      - name: speed_kph
-        start_bit: 0
-        length: 16
-        scale: 0.01
-        offset: 0
-        unit: kph
-```
-
-This keeps the simulator, tests, documentation, and microcontroller examples aligned.
-
-### 6. CLI is the first control surface
-
-The first implementation should be controlled through a command-line interface. A later control surface can be button-based, but it does not require a web framework.
-
-Expected CLI responsibilities:
-
-- Start and stop simulation
-- Select driving scenario
-- Inject faults
-- Adjust signal values manually
-- Display connection status for `vcan0` or real CAN interfaces
-- Print current vehicle state
-- Print emitted CAN frames when requested
-
-Preferred control direction:
-
-```text
-CLI Commands
-      |
-Simulator Control Interface
-      |
-C++ Simulator Runtime
-```
-
-CAN remains the vehicle-facing output. CLI commands are for humans, local development, and CI smoke tests. A later button control surface should call the same simulator control interface rather than duplicating simulator logic.
-
-## Initial CAN Frame Plan
+The signal map is versioned in `CanSim/config/can-signals.yaml`.
 
 | CAN ID | Message | Signals | Period |
 | --- | --- | --- | --- |
-| `0x100` | VehicleMotion | speed, throttle, brake | 100 ms |
-| `0x101` | EngineStatus | rpm, engine temperature | 100 ms |
-| `0x102` | PowerStatus | fuel level, battery voltage | 500 ms |
-| `0x103` | GearStatus | selected gear | 100 ms |
-| `0x700` | Diagnostics | active fault code summary | 1000 ms |
+| `0x100` | `VehicleMotion` | `speed_kph`, `throttle_percent`, `brake_active` | 100 ms |
+| `0x101` | `EngineStatus` | `engine_rpm`, `engine_temp_c` | 100 ms |
+| `0x102` | `PowerStatus` | `fuel_percent`, `battery_voltage` | 500 ms |
+| `0x103` | `GearStatus` | `selected_gear` | 100 ms |
+| `0x700` | `Diagnostics` | `fault_active`, `active_dtc` | 1000 ms |
+
+The current decoder in `CanDisplay` mirrors this contract manually. A later improvement can generate shared simulator and display constants from the same signal map.
+
+## Simulator Runtime Shape
+
+```text
+CLI Options
+      |
+Scenario / Manual Values
+      |
+VehicleState
+      |
+SignalMapCanEncoder
+      |
+CanFrame list
+      |
+CanOutput
+```
+
+Output adapters:
+
+- `ConsoleCanOutput`: local development and smoke tests.
+- `RecordingCanOutput`: unit tests.
+- `SocketCanOutput`: Linux `vcan0` or real SocketCAN interfaces.
+
+## Receiver Runtime Shape
+
+```text
+CAN frame bytes
+      |
+CanFrameView
+      |
+decodeCanFrame()
+      |
+TelemetryState
+      |
+Display renderer
+```
+
+For ESP32-S3, the TWAI driver should be the only hardware-specific part of the receive path. The decoder should remain portable C++ where practical.
+
+## SocketCAN Strategy
+
+SocketCAN gives the project two useful test modes:
+
+- `vcan0`: local Linux and CI testing without hardware.
+- `can0`: real USB-CAN adapter testing on a bench bus.
+
+Expected Linux virtual CAN flow:
+
+```text
+CanSim -> SocketCAN output -> vcan0 -> candump / integration checks
+```
+
+Expected hardware bench flow:
+
+```text
+CanSim -> SocketCAN can0 -> USB-CAN adapter -> CANH/CANL -> SN65HVD230 -> ESP32-S3
+```
+
+macOS can build and run the platform-independent pieces, but it cannot run SocketCAN output directly.
+
+## CI/CD Strategy
+
+CI should prove everything that does not require physical hardware:
+
+- Configure CMake from the repository root.
+- Build both `CanSim` and `CanDisplay`.
+- Run simulator and display decoder tests.
+- Run CLI smoke tests.
+- Run formatting checks.
+- On Linux, create `vcan0` and verify SocketCAN output.
+
+Hardware-in-the-loop checks should be added later with a manual process or self-hosted runner.
+
+## Design Decisions
+
+### CAN remains the boundary
+
+The display receiver should consume CAN frames, not simulator internals. That keeps the development path close to the final vehicle path.
+
+### Keep the decoder host-testable
+
+CAN decoding is core behavior and should remain testable on a laptop. ESP32-specific code should adapt hardware frames into portable frame types.
+
+### Keep the signal map versioned
+
+CAN IDs, periods, scale factors, and payload layout belong in version control. The simulator already consumes `CanSim/config/can-signals.yaml`; the display side should eventually share or generate from the same source of truth.
+
+### CLI first, richer controls later
+
+The CLI is the first control surface because it is simple, scriptable, and CI-friendly. A later button or UI surface should call the same simulator logic instead of duplicating scenario or encoding behavior.
 
 ## Open Questions
 
-- Should the first implementation use a custom signal map only, or should DBC support be included from the beginning?
-- Which hardware target should we document first: ESP32, STM32, or Arduino with MCP2515?
-- Should fault injection emit only diagnostic frames, or should it also alter normal telemetry values?
-- Should the later button control surface be a small local desktop UI, physical hardware buttons, or both?
+- Should `CanDisplay` generate decoder constants from `CanSim/config/can-signals.yaml`, or should both sides eventually consume a shared generated header?
+- Which display module and graphics library will be used?
+- Should fault injection affect only diagnostics, or also change normal telemetry values?
+- Should hardware-in-the-loop tests run manually, or should a self-hosted runner own them later?
 
-## Next Planned Step
+## Next Implementation Steps
 
-Create the repository skeleton:
-
-- CMake-based C++ project
-- Core vehicle state model
-- CAN signal encoder
-- CLI control surface
-- SocketCAN output adapter
-- Unit tests for frame encoding
-- Linux `vcan` integration test
+1. Add `--print-state`, `--list-scenarios`, and `--list-messages` to `CanSim`.
+2. Add time-varying scenarios to `CanSim`.
+3. Add named fault injection.
+4. Add an ESP32 TWAI adapter in `CanDisplay`.
+5. Add a display renderer interface that consumes `TelemetryState`.

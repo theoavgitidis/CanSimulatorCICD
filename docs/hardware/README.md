@@ -1,6 +1,13 @@
 # Hardware
 
-This folder documents the physical hardware used around the CAN simulator.
+Last updated: 2026-10-02
+
+This folder documents the physical hardware around the CAN simulator and future ESP32-S3 display receiver.
+
+The software split is:
+
+- `CanSim`: sends simulated CAN traffic.
+- `CanDisplay`: receives and decodes CAN traffic, with ESP32/display integration planned.
 
 Current hardware notes:
 

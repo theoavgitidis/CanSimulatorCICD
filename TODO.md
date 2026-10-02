@@ -37,6 +37,13 @@ Last updated: 2026-10-02
 - [ ] Test the microcontroller receiver path.
 - [ ] Validate display behavior from simulated vehicle states and faults.
 
+## CanDisplay Firmware
+
+- [ ] Add an ESP32 TWAI adapter that converts received frames to `candisplay::CanFrameView`.
+- [ ] Add a display renderer interface that consumes `candisplay::TelemetryState`.
+- [ ] Generate or share display decoder constants from `CanSim/config/can-signals.yaml`.
+- [ ] Add stale-data handling for missing CAN frames.
+
 ## CI/CD Polish
 
 - [ ] Add release build artifacts.

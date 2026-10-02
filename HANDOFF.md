@@ -9,13 +9,13 @@ This project contains a C++ CAN telemetry simulator and the start of an ESP32-S3
 Target real-world path:
 
 ```text
-Car -> Vehicle CAN bus -> Microcontroller CAN interface -> Display
+Car -> Vehicle CAN bus -> ESP32-S3 CAN interface -> Display
 ```
 
 Development/test path:
 
 ```text
-CanSim -> SocketCAN vcan0 or USB-CAN adapter -> CanDisplay / microcontroller
+CanSim -> console, vcan0, or USB-CAN adapter -> CanDisplay / ESP32-S3
 ```
 
 The simulator currently uses a CLI. A button-based control surface may come later, but it should call the same simulator logic instead of duplicating it.
@@ -24,7 +24,7 @@ The simulator currently uses a CLI. A button-based control surface may come late
 
 Implemented:
 
-- CMake-based C++20 project
+- Root CMake-based C++20 project with `CanSim` and `CanDisplay` subprojects
 - `CanFrame` and `VehicleState` types
 - CAN frame encoding for IDs `0x100`, `0x101`, `0x102`, `0x103`, and `0x700`
 - CLI scenarios: `idle`, `cruise`, `braking`
@@ -40,7 +40,7 @@ Implemented:
 - Fixed-period timing override with `--period-ms`
 - Testable `CanScheduler` module
 - Host-testable `CanDisplay` CAN decoder and telemetry state
-- Unit tests and CLI smoke test through CTest
+- Unit tests, display decoder tests, formatting checks, and CLI smoke tests through CTest
 - GitHub Actions CI with Linux `vcan0` SocketCAN smoke test
 - README and architecture docs
 
@@ -48,6 +48,8 @@ Not implemented yet:
 
 - Fault names such as `engine_overheat`
 - `--print-state`
+- ESP32-S3 TWAI receive adapter
+- Display renderer implementation
 - Real hardware USB-CAN validation
 - Button-based control surface
 
@@ -68,8 +70,10 @@ Not implemented yet:
 - `CanDisplay/include/candisplay/`: display-side frame and telemetry types
 - `CanDisplay/src/can_decoder.cpp`: display-side decoder for simulator CAN frames
 - `CanDisplay/tests/`: display-side unit tests
+- `CanSim/README.md` and `CanDisplay/README.md`: subproject documentation
 - `.github/workflows/ci.yml`: GitHub Actions CI
 - `docs/plannedArchitectures/`: architecture notes and diagrams
+- `docs/hardware/`: ESP32-S3 and CAN transceiver notes
 
 ## Local Mac Workflow
 
@@ -129,7 +133,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-If the VM only shows 6 CTest tests, that is usually because `clang-format` was not installed when CMake configured the build. The core simulator tests can still pass.
+If the VM shows fewer CTest entries than expected, that is usually because `clang-format` was not installed when CMake configured the build. The core simulator and display tests can still pass, but formatting checks will be disabled until CMake is reconfigured with `clang-format` installed.
 
 ## SocketCAN / vcan0 Manual Test
 
@@ -210,7 +214,7 @@ The CI currently:
 - Configures CMake
 - Builds
 - Runs CTest
-- Runs formatting check
+- Runs formatting checks for both subprojects
 - Runs CLI console smoke test
 - Sets up `vcan0`
 - Runs SocketCAN smoke test with `candump`
@@ -230,7 +234,6 @@ modprobe: FATAL: Module vcan not found
 
 ## Known Notes
 
-- Linux builds may show a warning about `expectFalse` being unused in `CanSim/tests/can_output_factory_test.cpp`. This happens because that helper is only used on non-Linux builds. It does not currently fail the build.
 - macOS cannot run the SocketCAN backend.
 - Each VM needs its own `vcan0` setup.
 - `candump vcan0` waits silently until frames arrive.
@@ -242,6 +245,8 @@ Add `--print-state` so scenario defaults and manual CLI overrides can be inspect
 are encoded or sent.
 
 This should print the resolved `VehicleState` and exit without requiring CAN output setup.
+
+After that, add the ESP32-S3 TWAI adapter in `CanDisplay` once the board is available.
 
 ## Quick Resume Commands
 

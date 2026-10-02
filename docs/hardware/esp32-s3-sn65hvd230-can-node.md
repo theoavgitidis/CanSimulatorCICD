@@ -1,15 +1,15 @@
 # ESP32-S3 SN65HVD230 CAN Receiver Node
 
-Last updated: 2026-09-30
+Last updated: 2026-10-02
 
 ## Status
 
 Selected hardware target, pending bench validation.
 
-This page documents the microcontroller side of the project: the hardware that will listen to CAN frames produced by the simulator, then later drive the display or button/control firmware.
+This page documents the microcontroller side of the project: the hardware that will listen to CAN frames produced by `CanSim`, then later drive the `CanDisplay` ESP32/display firmware.
 
 ```text
-C++ CAN Simulator
+CanSim
       |
 Linux SocketCAN can0
       |
@@ -21,7 +21,7 @@ SN65HVD230 CAN transceiver module
       |
 ESP32-S3 TWAI CAN controller
       |
-Display / receiver firmware
+CanDisplay receiver firmware
 ```
 
 The same receiver-side hardware can later listen to a real vehicle CAN bus instead of the simulator, but bench validation should happen first.
@@ -32,7 +32,7 @@ The same receiver-side hardware can later listen to a real vehicle CAN bus inste
 | --- | --- | --- |
 | ESP32-S3 dual Type-C development board module, `N16R8` / `N8R8`, with 44-pin expansion board | Microcontroller and CAN controller | ESP32-S3 has one TWAI controller. The exact flash/PSRAM variant should be checked on the module label when the board arrives. |
 | SN65HVD230 CAN bus transceiver module | Physical CAN transceiver | 3.3 V CAN transceiver module for ESP32-level logic. Connects the ESP32-S3 TWAI TX/RX pins to the differential CANH/CANL bus. |
-| USB-CAN adapter | Simulator-to-real-bus bridge | Still required on the computer side when the C++ simulator sends frames to physical CAN through SocketCAN `can0`. Not selected in this note. |
+| USB-CAN adapter | Simulator-to-real-bus bridge | Still required on the computer side when `CanSim` sends frames to physical CAN through SocketCAN `can0`. Not selected in this note. |
 
 Important distinction: the ESP32-S3 provides the CAN controller through TWAI, but it does not include the CAN transceiver. The SN65HVD230 module is the physical transceiver, but it is not a USB-CAN adapter and it is not a standalone CAN controller.
 
@@ -91,6 +91,8 @@ The ESP32-S3 firmware should:
 - Configure ESP-IDF TWAI, or an Arduino/PlatformIO wrapper around TWAI.
 - Use the same bitrate as the SocketCAN `can0` interface.
 - Start with standard 11-bit CAN identifiers.
+- Convert received TWAI frames into `candisplay::CanFrameView`.
+- Update `candisplay::TelemetryState` through `candisplay::decodeCanFrame()`.
 - Decode the simulator's current CAN IDs:
 
 | CAN ID | Message | Period in simulator |
@@ -102,6 +104,26 @@ The ESP32-S3 firmware should:
 | `0x700` | Diagnostics | 1000 ms |
 
 The firmware should eventually use `CanSim/config/can-signals.yaml` as the source of truth for IDs, signal names, scaling, and message periods. The starter decoder in `CanDisplay` currently mirrors those definitions manually.
+
+## Software Bring-Up Direction
+
+Before the ESP32-S3 arrives, continue developing the portable `CanDisplay` decoder and display-facing state model on the host.
+
+When hardware arrives, add the smallest possible ESP32-specific layer:
+
+```text
+TWAI receive message
+      |
+CanFrameView
+      |
+decodeCanFrame()
+      |
+TelemetryState
+      |
+display renderer
+```
+
+This keeps the CAN contract testable on the laptop and limits board-specific code to the hardware adapter and display driver.
 
 ## Linux SocketCAN Bench Test
 
