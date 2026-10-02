@@ -1,8 +1,10 @@
-# CAN Simulator CI/CD
+# CAN Simulator and Display CI/CD
 
-A planned C++ vehicle telemetry simulator focused on CAN output and CI/CD practice.
+Vehicle telemetry tooling for a simulator and an eventual ESP32-S3 display receiver.
 
-The simulator will generate fake vehicle telemetry, encode it into CAN frames, and send those frames first to the terminal, then to Linux SocketCAN interfaces such as `vcan0` and later real CAN hardware.
+`CanSim` generates fake vehicle telemetry, encodes it into CAN frames, and sends those frames first to the terminal, then to Linux SocketCAN interfaces such as `vcan0` and later real CAN hardware.
+
+`CanDisplay` is the start of the ESP32/display side. It currently contains hardware-independent C++ decoder code that can be tested before the ESP32-S3 board arrives.
 
 ## Target End State
 
@@ -34,7 +36,13 @@ In other words, the simulator stands in for the car while the microcontroller fi
 
 ## Current Status
 
-This repository has a working first C++ CLI implementation slice.
+This repository has a working C++ simulator slice and the first host-testable display decoder slice.
+
+## Repository Layout
+
+- `CanSim/`: C++ CAN simulator CLI, signal map, CAN encoders, output adapters, and simulator tests.
+- `CanDisplay/`: future ESP32-S3 display firmware area, starting with a hardware-independent CAN decoder and tests.
+- `docs/`: architecture and hardware notes shared by both sides.
 
 Implemented so far:
 
@@ -42,7 +50,7 @@ Implemented so far:
 - System diagram
 - Class diagram
 - CI/CD implementation diagram
-- CMake project skeleton
+- Root CMake project with separate `CanSim` and `CanDisplay` subprojects
 - `CanFrame` type
 - `VehicleState` type
 - CAN encoders for `0x100`, `0x101`, `0x102`, `0x103`, and `0x700`
@@ -52,13 +60,13 @@ Implemented so far:
 - Basic `idle`, `cruise`, and `braking` scenarios
 - Console and recording CAN output adapters
 - Linux SocketCAN output adapter for `vcan0` and real CAN interfaces
-- Versioned CAN signal map in `config/can-signals.yaml`
-- YAML-driven signal packing and message periods loaded from `config/can-signals.yaml`
+- Versioned CAN signal map in `CanSim/config/can-signals.yaml`
+- YAML-driven signal packing and message periods loaded from `CanSim/config/can-signals.yaml`
 - Hardcoded encoder retained as a compatibility baseline in tests
 - CAN output factory for CLI-selected output creation
-- Timed repeated sending with per-message periods loaded from `config/can-signals.yaml`
+- Timed repeated sending with per-message periods loaded from `CanSim/config/can-signals.yaml`
 - Fixed-period timing override with `--period-ms`
-- CTest-registered encoder, CLI parser, scenario, output, smoke, and formatting tests
+- CTest-registered simulator, display decoder, smoke, and formatting tests
 - GitHub Actions workflow
 
 Not implemented yet:
@@ -68,6 +76,7 @@ Not implemented yet:
 ## Project Goals
 
 - Build a small but realistic C++ CAN telemetry simulator.
+- Build the ESP32/display-side decoding logic alongside the simulator.
 - Practice CI/CD with a project that has tests, formatting, static analysis, integration tests, and release artifacts.
 - Support local development without CAN hardware through console output and Linux `vcan`.
 - Later support real CAN hardware through SocketCAN and USB-CAN adapters.
@@ -150,7 +159,7 @@ Run with a scenario:
 ./build/cansim --scenario cruise --frames 1
 ```
 
-Run for a timed duration using the per-message periods in `config/can-signals.yaml`:
+Run for a timed duration using the per-message periods in `CanSim/config/can-signals.yaml`:
 
 ```bash
 ./build/cansim --scenario cruise --duration 10 --output console
@@ -165,11 +174,10 @@ Override all message periods with one fixed test cadence:
 Use a different signal map file:
 
 ```bash
-./build/cansim --scenario cruise --duration 10 --signal-map config/can-signals.yaml --output console
+./build/cansim --scenario cruise --duration 10 --signal-map CanSim/config/can-signals.yaml --output console
 ```
 
-The signal map controls both CAN frame packing and timed message periods. Run commands from the
-repository root, or pass `--signal-map PATH` when running from another directory.
+The signal map controls both CAN frame packing and timed message periods. The default path works from either the repository root or the `CanSim/` folder. Pass `--signal-map PATH` to use another map.
 
 On Linux, send frames to SocketCAN:
 
@@ -212,7 +220,7 @@ cmake --build build --target format
 Check formatting through CTest:
 
 ```bash
-ctest --test-dir build -R cansim_format_check --output-on-failure
+ctest --test-dir build -R "format_check" --output-on-failure
 ```
 
 If `clang-format` is missing on macOS, install it with:

@@ -6,16 +6,32 @@
 
 #include <chrono>
 #include <exception>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
 namespace {
+
+[[nodiscard]] std::filesystem::path resolveSignalMapPath(const std::string& signal_map_path) {
+    const std::filesystem::path requested_path{signal_map_path};
+    if (std::filesystem::exists(requested_path) || signal_map_path != "config/can-signals.yaml") {
+        return requested_path;
+    }
+
+    const std::filesystem::path root_layout_path{"CanSim/config/can-signals.yaml"};
+    if (std::filesystem::exists(root_layout_path)) {
+        return root_layout_path;
+    }
+
+    return requested_path;
+}
 
 void sendFrames(const std::vector<cansim::CanFrame>& frames, cansim::CanOutput& output) {
     for (const cansim::CanFrame& frame : frames) {
@@ -127,7 +143,8 @@ int main(int argc, char* argv[]) {
     cansim::CanSignalMap signal_map;
     std::vector<cansim::CanFrame> frames;
     try {
-        signal_map = cansim::loadCanSignalMap(parse_result.options.signal_map_path);
+        signal_map =
+            cansim::loadCanSignalMap(resolveSignalMapPath(parse_result.options.signal_map_path));
         const cansim::SignalMapCanEncoder encoder{signal_map};
         frames = encoder.encodeAll(state);
     } catch (const std::exception& error) {

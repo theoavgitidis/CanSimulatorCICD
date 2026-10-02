@@ -1,13 +1,13 @@
 # Project TODOs
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ## Immediate
 
 - [ ] Add `--print-state` to print the resolved `VehicleState` after applying defaults, scenarios, and manual CLI overrides.
 - [ ] Improve `--help` text with short descriptions for timing, output, and signal-map options.
 - [ ] Add `--list-scenarios` for discoverability.
-- [ ] Add `--list-messages` to print CAN IDs, message names, and periods from `config/can-signals.yaml`.
+- [ ] Add `--list-messages` to print CAN IDs, message names, and periods from `CanSim/config/can-signals.yaml`.
 
 ## Scenario Runtime
 

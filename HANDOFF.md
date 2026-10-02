@@ -1,10 +1,10 @@
 # Project Handoff
 
-Last updated: 2026-09-30
+Last updated: 2026-10-02
 
 ## Project Summary
 
-This project is a C++ CAN telemetry simulator with CI/CD practice built around it.
+This project contains a C++ CAN telemetry simulator and the start of an ESP32-S3 display receiver codebase, with CI/CD practice built around both.
 
 Target real-world path:
 
@@ -15,7 +15,7 @@ Car -> Vehicle CAN bus -> Microcontroller CAN interface -> Display
 Development/test path:
 
 ```text
-C++ CAN Simulator -> SocketCAN vcan0 or USB-CAN adapter -> CAN receiver tools / microcontroller
+CanSim -> SocketCAN vcan0 or USB-CAN adapter -> CanDisplay / microcontroller
 ```
 
 The simulator currently uses a CLI. A button-based control surface may come later, but it should call the same simulator logic instead of duplicating it.
@@ -33,12 +33,13 @@ Implemented:
 - Recording output backend for tests
 - Linux SocketCAN output backend
 - Output factory
-- CAN signal map file at `config/can-signals.yaml`
-- YAML-driven signal packing and message periods loaded from `config/can-signals.yaml`
+- CAN signal map file at `CanSim/config/can-signals.yaml`
+- YAML-driven signal packing and message periods loaded from `CanSim/config/can-signals.yaml`
 - Hardcoded encoder retained as a compatibility baseline in tests
-- Timed repeated sending with per-message periods loaded from `config/can-signals.yaml`
+- Timed repeated sending with per-message periods loaded from `CanSim/config/can-signals.yaml`
 - Fixed-period timing override with `--period-ms`
 - Testable `CanScheduler` module
+- Host-testable `CanDisplay` CAN decoder and telemetry state
 - Unit tests and CLI smoke test through CTest
 - GitHub Actions CI with Linux `vcan0` SocketCAN smoke test
 - README and architecture docs
@@ -52,17 +53,21 @@ Not implemented yet:
 
 ## Important Files
 
-- `CMakeLists.txt`: build, tests, formatting target
-- `src/main.cpp`: CLI executable entry point
-- `include/cansim/cli_options.hpp` and `src/cli_options.cpp`: CLI parsing
-- `include/cansim/can_encoder.hpp` and `src/can_encoder.cpp`: hardcoded baseline and YAML-driven CAN frame encoding
-- `include/cansim/can_scheduler.hpp` and `src/can_scheduler.cpp`: per-message timing
-- `include/cansim/can_signal_map.hpp` and `src/can_signal_map.cpp`: signal packing and schedule loading from `config/can-signals.yaml`
-- `include/cansim/can_output.hpp`: output interface
-- `src/console_can_output.cpp`: terminal output backend
-- `src/socket_can_output_linux.cpp`: Linux SocketCAN backend
-- `src/can_output_factory.cpp`: creates selected output backend
-- `tests/`: unit and smoke tests
+- `CMakeLists.txt`: root build, tests, and aggregate formatting target
+- `CanSim/CMakeLists.txt`: simulator build, tests, and formatting check
+- `CanSim/src/main.cpp`: CLI executable entry point
+- `CanSim/include/cansim/cli_options.hpp` and `CanSim/src/cli_options.cpp`: CLI parsing
+- `CanSim/include/cansim/can_encoder.hpp` and `CanSim/src/can_encoder.cpp`: hardcoded baseline and YAML-driven CAN frame encoding
+- `CanSim/include/cansim/can_scheduler.hpp` and `CanSim/src/can_scheduler.cpp`: per-message timing
+- `CanSim/include/cansim/can_signal_map.hpp` and `CanSim/src/can_signal_map.cpp`: signal packing and schedule loading from `CanSim/config/can-signals.yaml`
+- `CanSim/include/cansim/can_output.hpp`: output interface
+- `CanSim/src/console_can_output.cpp`: terminal output backend
+- `CanSim/src/socket_can_output_linux.cpp`: Linux SocketCAN backend
+- `CanSim/src/can_output_factory.cpp`: creates selected output backend
+- `CanSim/tests/`: simulator unit and smoke tests
+- `CanDisplay/include/candisplay/`: display-side frame and telemetry types
+- `CanDisplay/src/can_decoder.cpp`: display-side decoder for simulator CAN frames
+- `CanDisplay/tests/`: display-side unit tests
 - `.github/workflows/ci.yml`: GitHub Actions CI
 - `docs/plannedArchitectures/`: architecture notes and diagrams
 
@@ -225,11 +230,11 @@ modprobe: FATAL: Module vcan not found
 
 ## Known Notes
 
-- Linux builds may show a warning about `expectFalse` being unused in `tests/can_output_factory_test.cpp`. This happens because that helper is only used on non-Linux builds. It does not currently fail the build.
+- Linux builds may show a warning about `expectFalse` being unused in `CanSim/tests/can_output_factory_test.cpp`. This happens because that helper is only used on non-Linux builds. It does not currently fail the build.
 - macOS cannot run the SocketCAN backend.
 - Each VM needs its own `vcan0` setup.
 - `candump vcan0` waits silently until frames arrive.
-- The simulator loads `config/can-signals.yaml` relative to the current working directory unless `--signal-map PATH` is provided.
+- The simulator first looks for `config/can-signals.yaml` relative to the current working directory, then falls back to `CanSim/config/can-signals.yaml` when run from the repository root. Use `--signal-map PATH` for any other map.
 
 ## Recommended Next Implementation Step
 

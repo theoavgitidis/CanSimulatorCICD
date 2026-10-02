@@ -3,3 +3,4 @@ build/
 .DS_Store
 *.gch
 include/cansim/vehicle_state
+CanSim/include/cansim/vehicle_state

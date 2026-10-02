@@ -101,7 +101,7 @@ The ESP32-S3 firmware should:
 | `0x103` | GearStatus | 100 ms |
 | `0x700` | Diagnostics | 1000 ms |
 
-The firmware should eventually use `config/can-signals.yaml` as the source of truth for IDs, signal names, scaling, and message periods.
+The firmware should eventually use `CanSim/config/can-signals.yaml` as the source of truth for IDs, signal names, scaling, and message periods. The starter decoder in `CanDisplay` currently mirrors those definitions manually.
 
 ## Linux SocketCAN Bench Test
 
